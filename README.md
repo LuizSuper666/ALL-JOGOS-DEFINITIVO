@@ -1,79 +1,46 @@
 -- Criando a interface flutuante
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")  -- Ajustando para PlayerGui
-
+local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
 local FloatingButton = Instance.new("TextButton", ScreenGui)
+
 FloatingButton.Size = UDim2.new(0, 80, 0, 30)
 FloatingButton.Position = UDim2.new(0.9, 0, 0.1, 0)
 FloatingButton.Text = "SCRIPT"
 FloatingButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
-FloatingButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-FloatingButton.Font = Enum.Font.SourceSansBold
-FloatingButton.TextSize = 14
-FloatingButton.BorderSizePixel = 0
-FloatingButton.BackgroundTransparency = 0.3
-FloatingButton.AutoButtonColor = true
 
 local Panel = Instance.new("Frame", ScreenGui)
-Panel.Size = UDim2.new(0, 220, 0, 250)
+Panel.Size = UDim2.new(0, 200, 0, 200)
 Panel.Position = UDim2.new(0.75, 0, 0.1, 0)
 Panel.Visible = false
 Panel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-Panel.BackgroundTransparency = 0.2
-Panel.BorderSizePixel = 0
-
--- Adicionando Scroll
-local Scroll = Instance.new("ScrollingFrame", Panel)
-Scroll.Size = UDim2.new(1, 0, 1, -30)
-Scroll.Position = UDim2.new(0, 0, 0, 0)
-Scroll.CanvasSize = UDim2.new(0, 0, 1.5, 0)  -- Ajuste da altura
-Scroll.ScrollBarThickness = 5
-Scroll.BackgroundTransparency = 1
 
 local CloseButton = Instance.new("TextButton", Panel)
 CloseButton.Size = UDim2.new(0, 30, 0, 30)
 CloseButton.Position = UDim2.new(1, -30, 0, 0)
 CloseButton.Text = "X"
 CloseButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.BorderSizePixel = 0
 
 FloatingButton.MouseButton1Click:Connect(function()
-Panel.Visible = not Panel.Visible
+    Panel.Visible = not Panel.Visible
 end)
 
 CloseButton.MouseButton1Click:Connect(function()
-Panel.Visible = false
+    Panel.Visible = false
 end)
 
 -- Criando botões e funções
 local function createButton(name, position, action)
-local button = Instance.new("TextButton", Scroll)
-button.Size = UDim2.new(0, 180, 0, 40)
-button.Position = UDim2.new(0, 10, 0, position)
-button.Text = name
-button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)  -- Vermelho = desativado
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.Font = Enum.Font.SourceSansBold
-button.TextSize = 14
-button.BorderSizePixel = 0
-button.AutoButtonColor = true
-button.BackgroundTransparency = 0.1
-button.ClipsDescendants = true
-button.SizeConstraint = Enum.SizeConstraint.RelativeXY
-button.ZIndex = 2
+    local button = Instance.new("TextButton", Panel)
+    button.Size = UDim2.new(0, 180, 0, 40)
+    button.Position = UDim2.new(0, 10, 0, position)
+    button.Text = name
+    button.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Vermelho = desativado
 
--- Arredondando os botões  
-local UICorner = Instance.new("UICorner", button)  
-UICorner.CornerRadius = UDim.new(0, 8)  
-
-local active = false  
-button.MouseButton1Click:Connect(function()  
-    active = not active  
-    button.BackgroundColor3 = active and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)  
-    action(active)  
-end)
-
+    local active = false
+    button.MouseButton1Click:Connect(function()
+        active = not active
+        button.BackgroundColor3 = active and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        action(active)
+    end)
 end
 
 -- 🔰 Proteção contra Kick (Bloqueia Tentativas de Kick)
@@ -232,8 +199,10 @@ createButton("ESP", 110, function(active)
             ESPObjects[player]:Destroy()
             ESPObjects[player] = nil
         end
+    end)
+end)
 
--- 🚀 Aumentar a velocidade em 3x
+- 🚀 Aumentar a velocidade em 3x
 local velocidadeAtiva = false
 createButton("Aumentar Velocidade x3", 210, function(active)
     local player = game:GetService("Players").LocalPlayer
