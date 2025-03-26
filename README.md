@@ -68,43 +68,48 @@ else flying = false if flyBodyVelocity then flyBodyVelocity:Destroy() end if fly
 
 end)
 
--- 👀 ESP com nome em cima do quadrado createButton("ESP", 160, function(active) for _, player in pairs(game.Players:GetPlayers()) do if player == game.Players.LocalPlayer then return end
+-- 👀 ESP com nome em cima do quadrado
+createButton("ESP", 160, function(active)
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player == game.Players.LocalPlayer then continue end
 
-local char = player.Character
-    if char then
-        local head = char:FindFirstChild("Head")
-        if head then
-            local esp = Instance.new("BillboardGui", head)
-            esp.Size = UDim2.new(0, 50, 0, 50)
-            esp.Adornee = head
-            esp.AlwaysOnTop = true
+        local char = player.Character
+        if char then
+            local head = char:FindFirstChild("Head")
+            if head then
+                local esp = Instance.new("BillboardGui", head)
+                esp.Size = UDim2.new(0, 50, 0, 50)
+                esp.Adornee = head
+                esp.AlwaysOnTop = true
 
-            local dot = Instance.new("Frame", esp)
-            dot.Size = UDim2.new(1, 0, 1, 0)
-            dot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-            dot.BackgroundTransparency = 0
-            dot.BorderSizePixel = 0
+                local dot = Instance.new("Frame", esp)
+                dot.Size = UDim2.new(1, 0, 1, 0)
+                dot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+                dot.BackgroundTransparency = 0
+                dot.BorderSizePixel = 0
 
-            local nameTag = Instance.new("TextLabel", esp)
-            nameTag.Size = UDim2.new(1, 0, 0.3, 0)
-            nameTag.Position = UDim2.new(0, 0, -0.5, 0)
-            nameTag.Text = player.Name
-            nameTag.TextColor3 = Color3.fromRGB(255, 255, 255)
-            nameTag.BackgroundTransparency = 1
-            nameTag.Font = Enum.Font.SourceSansBold
-            nameTag.TextSize = 14
+                local nameTag = Instance.new("TextLabel", esp)
+                nameTag.Size = UDim2.new(1, 0, 0.3, 0)
+                nameTag.Position = UDim2.new(0, 0, -0.5, 0)
+                nameTag.Text = player.Name
+                nameTag.TextColor3 = Color3.fromRGB(255, 255, 255)
+                nameTag.BackgroundTransparency = 1
+                nameTag.Font = Enum.Font.SourceSansBold
+                nameTag.TextSize = 14
+            end
         end
     end
-end
-
 end)
 
--- 🏃‍♂️ Velocidade 4X createButton("Velocidade 4X", 210, function(active) local player = game:GetService("Players").LocalPlayer local char = player.Character local humanoid = char and char:FindFirstChild("Humanoid")
+-- 🏃‍♂️ Velocidade 4X
+createButton("Velocidade 4X", 210, function(active)
+    local player = game:GetService("Players").LocalPlayer
+    local char = player.Character
+    local humanoid = char and char:FindFirstChild("Humanoid")
 
-if humanoid then
-    humanoid.WalkSpeed = active and 64 or 16 -- Velocidade padrão é 16, 4x é 64
-end
-
+    if humanoid then
+        humanoid.WalkSpeed = active and 64 or 16 -- Velocidade padrão é 16, 4x é 64
+    end
 end)
 
 print("[✅] UI Criada! Anti-Tudo, Atravessar Paredes, Voar, ESP (com nome) e Velocidade 4X ativados.")
