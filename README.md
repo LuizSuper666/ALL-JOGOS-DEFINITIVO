@@ -27,9 +27,16 @@ CloseButton.MouseButton1Click:Connect(function()
     Panel.Visible = false
 end)
 
+-- Adicionando ScrollV
+local ScrollingFrame = Instance.new("ScrollingFrame", Panel)
+ScrollingFrame.Size = UDim2.new(1, 0, 1, -30)
+ScrollingFrame.Position = UDim2.new(0, 0, 0, 30)
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 2, 0) -- Ajustar conforme mais botões forem adicionados
+ScrollingFrame.ScrollBarThickness = 5
+
 -- Criando botões e funções
 local function createButton(name, position, action)
-    local button = Instance.new("TextButton", Panel)
+    local button = Instance.new("TextButton", ScrollingFrame)
     button.Size = UDim2.new(0, 180, 0, 40)
     button.Position = UDim2.new(0, 10, 0, position)
     button.Text = name
@@ -46,7 +53,6 @@ end
 -- 🔰 Anti-Tudo
 createButton("Anti-Tudo", 10, function(active)
     if active then
-        -- Proteção contra kick
         local mt = getrawmetatable(game)
         setreadonly(mt, false)
         local oldNamecall = mt.__namecall
@@ -56,72 +62,67 @@ createButton("Anti-Tudo", 10, function(active)
             return oldNamecall(self, ...)
         end)
 
-        -- Proteção contra AFK
         local Players = game:GetService("Players")
         for _, v in pairs(getconnections(Players.LocalPlayer.Idled)) do v:Disable() end
 
-        -- 🔰 Proteção Contra Logs do Byfron (Impede Envio de Dados Suspeitos)
         local oldHttpPost = hookfunction(game.HttpPost, function(...)
             print("[🛡️ Proteção Ativada] Bloqueando Logs do Byfron.")
-            return nil -- Bloqueia envio de logs suspeitos para os servidores do Roblox
+            return nil
         end)
 
-        -- 🔰 Proteção Contra Fechamento Forçado do Jogo
         game:GetService("CoreGui").ChildRemoved:Connect(function(child)
             if child.Name == "RobloxPromptGui" then
                 print("[⚠️ Proteção Ativada] Tentativa de Fechar Jogo Detectada.")
-                wait(9e9) -- Previne fechamento forçado
+                wait(9e9)
             end
         end)
     else
-        -- Desativar proteções (não tem como desfazer completamente, mas minimiza)
         game:GetService("Players").LocalPlayer.Idled:Connect(function() end)
     end
 end)
 
--- ✈️ Voar (Novo sistema, segue a câmera)
-local flying = false
-local speed = 60
-local flyBodyVelocity
-local flyGyro
-
+-- ✈️ Voar
 createButton("Voar", 60, function(active)
     local player = game:GetService("Players").LocalPlayer
     local char = player.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
 
     if active and root then
-        flying = true
-        flyBodyVelocity = Instance.new("BodyVelocity", root)
+        local flyBodyVelocity = Instance.new("BodyVelocity", root)
         flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
         flyBodyVelocity.MaxForce = Vector3.new(4000, 4000, 4000)
 
-        flyGyro = Instance.new("BodyGyro", root)
+        local flyGyro = Instance.new("BodyGyro", root)
         flyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
         flyGyro.CFrame = root.CFrame
 
         game:GetService("RunService").RenderStepped:Connect(function()
-            if not flying then return end
+            if not active then return end
             local cam = workspace.CurrentCamera
             flyGyro.CFrame = cam.CFrame
-            flyBodyVelocity.Velocity = cam.CFrame.LookVector * speed
+            flyBodyVelocity.Velocity = cam.CFrame.LookVector * 60
         end)
-    else
-        flying = false
-        if flyBodyVelocity then flyBodyVelocity:Destroy() end
-        if flyGyro then flyGyro:Destroy() end
     end
 end)
 
--- 🚪 Atravessar paredes (Corrigido: Agora sempre funciona)
-local atravessarAtivo = false
+-- 🚀 Aumentar Velocidade x3
+createButton("Aumentar Velocidade x3", 110, function(active)
+    local player = game:GetService("Players").LocalPlayer
+    local char = player.Character
+    if char then
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = active and 48 or 16 -- Padrão do Roblox é 16
+            print("[🚀] Velocidade " .. (active and "aumentada x3" or "normalizada"))
+        end
+    end
+end)
 
-createButton("Atravessar Paredes", 110, function(active)
+-- 🚪 Atravessar Paredes
+createButton("Atravessar Paredes", 160, function(active)
     local char = game:GetService("Players").LocalPlayer.Character
-    atravessarAtivo = active
-
     game:GetService("RunService").Stepped:Connect(function()
-        if not atravessarAtivo then return end
+        if not active then return end
         if char then
             for _, part in pairs(char:GetChildren()) do
                 if part:IsA("BasePart") then
@@ -132,72 +133,57 @@ createButton("Atravessar Paredes", 110, function(active)
     end)
 end)
 
--- 👀 ESP corrigido
-local ESPEnabled = false
-local ESPObjects = {}
+-- 👀 ESP
+createButton("ESP", 210, function(active)
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer then
+            local char = player.Character
+            if char then
+                local head = char:FindFirstChild("Head")
+                if head then
+                    local esp = Instance.new("BillboardGui", head)
+                    esp.Size = UDim2.new(0, 10, 0, 10)
+                    esp.Adornee = head
+                    esp.AlwaysOnTop = true
 
-createButton("ESP", 160, function(active)
-    ESPEnabled = active
-
-    -- Remover ESP quando desativado
-    if not ESPEnabled then
-        for _, obj in pairs(ESPObjects) do
-            obj:Destroy()
-        end
-        ESPObjects = {}
-        return
-    end
-
-    -- Criar ESP
-    local function createESP(player)
-        if player == game.Players.LocalPlayer then return end -- Não adicionar ESP em si mesmo
-
-        local char = player.Character
-        if char then
-            local head = char:FindFirstChild("Head")
-            if head then
-                local esp = Instance.new("BillboardGui", head)
-                esp.Size = UDim2.new(0, 10, 0, 10) -- Tamanho pequeno da bolinha
-                esp.Adornee = head -- Correção aqui
-                esp.AlwaysOnTop = true
-
-                local dot = Instance.new("Frame", esp)
-                dot.Size = UDim2.new(1, 0, 1, 0)
-                dot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-                dot.BackgroundTransparency = 0
-                dot.BorderSizePixel = 0
-
-                ESPObjects[player] = esp
+                    local dot = Instance.new("Frame", esp)
+                    dot.Size = UDim2.new(1, 0, 1, 0)
+                    dot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+                    dot.BorderSizePixel = 0
+                end
             end
         end
     end
-
-    -- Ativar ESP para jogadores existentes
-    for _, player in pairs(game.Players:GetPlayers()) do
-        createESP(player)
-    end
-
-    -- Atualizar ESP para novos jogadores
-    game.Players.PlayerAdded:Connect(createESP)
-    game.Players.PlayerRemoving:Connect(function(player)
-        if ESPObjects[player] then
-            ESPObjects[player]:Destroy()
-            ESPObjects[player] = nil
-        end
-    end)
 end)
 
--- 🚀 Aumentar a velocidade em 3x
-local velocidadeAtiva = false
-createButton("Aumentar Velocidade x3", 210, function(active)
-    local player = game:GetService("Players").LocalPlayer
-    local char = player.Character
-    if char then
-        local humanoid = char:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = active and humanoid.WalkSpeed * 3 or humanoid.WalkSpeed / 3
-            velocidadeAtiva = active
-            print("[🚀] Velocidade " .. (active and "aumentada x3" or "normalizada"))
+-- 📍 Teleporte para o personagem mais próximo
+createButton("Teleporte Perto", 260, function(active)
+    if active then
+        local player = game.Players.LocalPlayer
+        local char = player.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+
+        if root then
+            local closestPlayer
+            local closestDistance = math.huge
+
+            for _, otherPlayer in pairs(game.Players:GetPlayers()) do
+                if otherPlayer ~= player then
+                    local otherChar = otherPlayer.Character
+                    local otherRoot = otherChar and otherChar:FindFirstChild("HumanoidRootPart")
+                    if otherRoot then
+                        local distance = (root.Position - otherRoot.Position).Magnitude
+                        if distance < closestDistance then
+                            closestDistance = distance
+                            closestPlayer = otherRoot
+                        end
+                    end
+                end
+            end
+
+            if closestPlayer then
+                root.CFrame = closestPlayer.CFrame + Vector3.new(2, 0, 2)
+            end
         end
     end
 end)
