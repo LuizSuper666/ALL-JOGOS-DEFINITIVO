@@ -1,5 +1,5 @@
 -- Criando a interface flutuante
-local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+local ScreenGui = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui) -- Mudança para PlayerGui
 local FloatingButton = Instance.new("TextButton", ScreenGui)
 
 FloatingButton.Size = UDim2.new(0, 80, 0, 30)
@@ -158,7 +158,7 @@ createButton("ESP", 160, function(active)
             if head then
                 local esp = Instance.new("BillboardGui", head)
                 esp.Size = UDim2.new(0, 10, 0, 10) -- Tamanho pequeno da bolinha
-                esp.Adornee = head
+                esp.Adornee = head -- Correção aqui
                 esp.AlwaysOnTop = true
 
                 local dot = Instance.new("Frame", esp)
@@ -185,8 +185,9 @@ createButton("ESP", 160, function(active)
             ESPObjects[player] = nil
         end
     end)
-    
-- 🚀 Aumentar a velocidade em 3x
+end)
+
+-- 🚀 Aumentar a velocidade em 3x
 local velocidadeAtiva = false
 createButton("Aumentar Velocidade x3", 210, function(active)
     local player = game:GetService("Players").LocalPlayer
@@ -200,4 +201,3 @@ createButton("Aumentar Velocidade x3", 210, function(active)
         end
     end
 end)
-
