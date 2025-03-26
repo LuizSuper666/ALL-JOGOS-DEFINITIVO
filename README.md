@@ -43,60 +43,45 @@ local function createButton(name, position, action)
     end)
 end
 
--- 🔰 Proteção contra Kick (Bloqueia Tentativas de Kick)
-local mt = getrawmetatable(game)
-setreadonly(mt, false)
+-- 🔰 Anti-Tudo
+createButton("Anti-Tudo", 10, function(active)
+    if active then
+        -- Proteção contra kick
+        local mt = getrawmetatable(game)
+        setreadonly(mt, false)
+        local oldNamecall = mt.__namecall
+        mt.__namecall = newcclosure(function(self, ...)
+            local method = getnamecallmethod()
+            if method == "Kick" or method == "kick" then return nil end
+            return oldNamecall(self, ...)
+        end)
 
-local oldNamecall = mt.__namecall
-mt.__namecall = newcclosure(function(self, ...)
-    local method = getnamecallmethod()
-    if method == "Kick" or method == "kick" then
-        print("[⚠️ Proteção Ativada] Tentativa de Kick bloqueada.")
-        return nil -- Cancela qualquer tentativa de Kick
-    end
-    return oldNamecall(self, ...)
-end)
+        -- Proteção contra AFK
+        local Players = game:GetService("Players")
+        for _, v in pairs(getconnections(Players.LocalPlayer.Idled)) do v:Disable() end
 
--- 🔰 Proteção contra Banimento Automático (Desativa detecção de AFK/Inatividade)
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local function DisableBan()
-    for _, v in pairs(getconnections(LocalPlayer.Idled)) do
-        v:Disable() -- Impede detecção por inatividade
-    end
-    print("[🛡️ Proteção Ativada] Detector de Inatividade Desativado.")
-end
-DisableBan()
+        -- 🔰 Proteção Contra Logs do Byfron (Impede Envio de Dados Suspeitos)
+        local oldHttpPost = hookfunction(game.HttpPost, function(...)
+            print("[🛡️ Proteção Ativada] Bloqueando Logs do Byfron.")
+            return nil -- Bloqueia envio de logs suspeitos para os servidores do Roblox
+        end)
 
--- 🔰 Bypass do Byfron Anti-Cheat (Impedindo Detecção)
-local oldIndex = mt.__index
-mt.__index = newcclosure(function(self, key)
-    if key == "PreloadAsync" or key == "InvokeServer" or key == "Kick" then
-        print("[⚠️ Proteção Ativada] Tentativa de Detecção do Byfron Bloqueada.")
-        return function(...) return nil end -- Cancela qualquer tentativa de detecção
-    end
-    return oldIndex(self, key)
-end)
-
--- 🔰 Proteção Contra Logs do Byfron (Impede Envio de Dados Suspeitos)
-local oldHttpPost = hookfunction(game.HttpPost, function(...)
-    print("[🛡️ Proteção Ativada] Bloqueando Logs do Byfron.")
-    return nil -- Bloqueia envio de logs suspeitos para os servidores do Roblox
-end)
-
--- 🔰 Proteção Contra Fechamento Forçado do Jogo
-game:GetService("CoreGui").ChildRemoved:Connect(function(child)
-    if child.Name == "RobloxPromptGui" then
-        print("[⚠️ Proteção Ativada] Tentativa de Fechar Jogo Detectada.")
-        wait(9e9) -- Previne fechamento forçado
+        -- 🔰 Proteção Contra Fechamento Forçado do Jogo
+        game:GetService("CoreGui").ChildRemoved:Connect(function(child)
+            if child.Name == "RobloxPromptGui" then
+                print("[⚠️ Proteção Ativada] Tentativa de Fechar Jogo Detectada.")
+                wait(9e9) -- Previne fechamento forçado
+            end
+        end)
+    else
+        -- Desativar proteções (não tem como desfazer completamente, mas minimiza)
+        game:GetService("Players").LocalPlayer.Idled:Connect(function() end)
     end
 end)
-
-print("[✅] Proteção Máxima Ativada: Anti-Kick, Anti-Ban e Byfron Bypass!")
 
 -- ✈️ Voar (Novo sistema, segue a câmera)
 local flying = false
-local speed = 50
+local speed = 60
 local flyBodyVelocity
 local flyGyro
 
@@ -151,7 +136,7 @@ end)
 local ESPEnabled = false
 local ESPObjects = {}
 
-createButton("ESP", 110, function(active)
+createButton("ESP", 160, function(active)
     ESPEnabled = active
 
     -- Remover ESP quando desativado
@@ -200,8 +185,7 @@ createButton("ESP", 110, function(active)
             ESPObjects[player] = nil
         end
     end)
-end)
-
+    
 - 🚀 Aumentar a velocidade em 3x
 local velocidadeAtiva = false
 createButton("Aumentar Velocidade x3", 210, function(active)
@@ -216,3 +200,4 @@ createButton("Aumentar Velocidade x3", 210, function(active)
         end
     end
 end)
+
