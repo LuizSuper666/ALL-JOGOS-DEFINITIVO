@@ -49,14 +49,53 @@ local function createButton(name, position, action)
     end)
 end
 
--- ✈️ Voar (Corrigido para parar corretamente)
+-- 🔰 Anti-Tudo (Agora é o primeiro botão)
+createButton("Anti-Tudo", 10, function(active)
+    if active then
+        -- Proteção contra kick
+        local mt = getrawmetatable(game)
+        setreadonly(mt, false)
+        local oldNamecall = mt.__namecall
+        mt.__namecall = newcclosure(function(self, ...)
+            local method = getnamecallmethod()
+            if method == "Kick" or method == "kick" then return nil end
+            return oldNamecall(self, ...)
+        end)
+
+        -- Proteção contra AFK
+        local Players = game:GetService("Players")
+        for _, v in pairs(getconnections(Players.LocalPlayer.Idled)) do v:Disable() end
+
+        -- Proteção Contra Logs do Byfron (Impede Envio de Dados Suspeitos)
+        local oldHttpPost = hookfunction(game.HttpPost, function(...)
+            print("[🛡️ Proteção Ativada] Bloqueando Logs do Byfron.")
+            return nil -- Bloqueia envio de logs suspeitos para os servidores do Roblox
+        end)
+
+        -- Proteção Contra Fechamento Forçado do Jogo
+        game:GetService("CoreGui").ChildRemoved:Connect(function(child)
+            if child.Name == "RobloxPromptGui" then
+                print("[⚠️ Proteção Ativada] Tentativa de Fechar Jogo Detectada.")
+                wait(9e9) -- Previne fechamento forçado
+            end
+        end)
+
+        print("[🔰] Anti-Tudo ativado!")
+    else
+        -- Desativar proteções (não tem como desfazer completamente, mas minimiza)
+        game:GetService("Players").LocalPlayer.Idled:Connect(function() end)
+        print("[🔰] Anti-Tudo desativado!")
+    end
+end)
+
+-- ✈️ Voar
 local flying = false
 local speed = 60
 local flyBodyVelocity
 local flyGyro
 local flyConnection
 
-createButton("Voar", 10, function(active)
+createButton("Voar", 60, function(active)
     local player = game:GetService("Players").LocalPlayer
     local char = player.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
@@ -85,11 +124,11 @@ createButton("Voar", 10, function(active)
     end
 end)
 
--- 🚪 Atravessar paredes (Corrigido para desativar corretamente)
+-- 🚪 Atravessar paredes
 local atravessarAtivo = false
 local atravessarConnection
 
-createButton("Atravessar Paredes", 60, function(active)
+createButton("Atravessar Paredes", 110, function(active)
     local char = game:GetService("Players").LocalPlayer.Character
     atravessarAtivo = active
 
@@ -116,23 +155,21 @@ createButton("Atravessar Paredes", 60, function(active)
     end
 end)
 
--- 🚀 Aumentar a velocidade x3 (Corrigido para aparecer no menu)
-local velocidadeAtiva = false
-createButton("Aumentar Velocidade x3", 110, function(active)
+-- 🚀 Aumentar a velocidade x3
+createButton("Aumentar Velocidade x3", 160, function(active)
     local player = game:GetService("Players").LocalPlayer
     local char = player.Character
     if char then
         local humanoid = char:FindFirstChild("Humanoid")
         if humanoid then
             humanoid.WalkSpeed = active and 48 or 16 -- Assumindo que 16 é o padrão
-            velocidadeAtiva = active
             print("[🚀] Velocidade " .. (active and "aumentada x3" or "normalizada"))
         end
     end
 end)
 
 -- 🔀 Teleporte para o jogador mais próximo
-createButton("Teleporte p/ Mais Próximo", 160, function()
+createButton("Teleporte p/ Mais Próximo", 210, function()
     local player = game.Players.LocalPlayer
     local char = player.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
