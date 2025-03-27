@@ -159,3 +159,95 @@ createButton("Atravessar Paredes", 110, function(active)
         end
     end
 end)
+
+-- Aumentar Velocidade x3
+createButton("Aumentar Velocidade x3", 160, function(active)
+    local player = game:GetService("Players").LocalPlayer
+    local char = player.Character
+    if char then
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = active and 48 or 16
+        end
+    end
+end)
+
+-- ESP
+local ESPEnabled = false
+local ESPObjects = {}
+
+createButton("ESP", 210, function(active)
+    ESPEnabled = active
+
+    if not ESPEnabled then
+        for _, obj in pairs(ESPObjects) do
+            obj:Destroy()
+        end
+        ESPObjects = {}
+        return
+    end
+
+    local function createESP(player)
+        if player == game.Players.LocalPlayer then return end
+
+        local char = player.Character
+        if char then
+            local head = char:FindFirstChild("Head")
+            if head then
+                local esp = Instance.new("BillboardGui", head)
+                esp.Size = UDim2.new(0, 10, 0, 10)
+                esp.Adornee = head
+                esp.AlwaysOnTop = true
+
+                local dot = Instance.new("Frame", esp)
+                dot.Size = UDim2.new(1, 0, 1, 0)
+                dot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+                dot.BackgroundTransparency = 0
+                dot.BorderSizePixel = 0
+
+                ESPObjects[player] = esp
+            end
+        end
+    end
+
+    for _, player in pairs(game.Players:GetPlayers()) do
+        createESP(player)
+    end
+
+    game.Players.PlayerAdded:Connect(createESP)
+    game.Players.PlayerRemoving:Connect(function(player)
+        if ESPObjects[player] then
+            ESPObjects[player]:Destroy()
+            ESPObjects[player] = nil
+        end
+    end)
+end)
+
+-- Teleporte para o jogador mais próximo
+createButton("Teleporte p/ Mais Próximo", 260, function()
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+
+    if root then
+        local closestPlayer
+        local closestDistance = math.huge
+
+        for _, otherPlayer in pairs(game.Players:GetPlayers()) do
+            if otherPlayer ~= player and otherPlayer.Character then
+                local otherRoot = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if otherRoot then
+                    local distance = (root.Position - otherRoot.Position).Magnitude
+                    if distance < closestDistance then
+                        closestDistance = distance
+                        closestPlayer = otherRoot
+                    end
+                end
+            end
+        end
+
+        if closestPlayer then
+            root.CFrame = closestPlayer.CFrame
+        end
+    end
+end)
