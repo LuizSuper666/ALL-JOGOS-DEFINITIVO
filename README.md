@@ -47,97 +47,67 @@ local function createButton(name, position, action)
     end)
 end
 
--- Anti-Tudo
+-- Anti-Tudo Melhorado
 createButton("Anti-Tudo", 10, function(active)
     if active then
+        -- Proteção contra Kick
         local mt = getrawmetatable(game)
         setreadonly(mt, false)
         local oldNamecall = mt.__namecall
         mt.__namecall = newcclosure(function(self, ...)
             local method = getnamecallmethod()
-            if method == "Kick" or method == "kick" then return nil end
+            if method:lower() == "kick" then return nil end
             return oldNamecall(self, ...)
         end)
 
-        local Players = game:GetService("Players")
-        for _, v in pairs(getconnections(Players.LocalPlayer.Idled)) do v:Disable() end
+        -- Impede desconexão por inatividade
+        for _, v in pairs(getconnections(game:GetService("Players").LocalPlayer.Idled)) do
+            v:Disable()
+        end
 
-        -- Bloqueia logs de HTTP (Byfron)
+        -- Bloqueia logs HTTP (Byfron)
         local oldHttpPost = hookfunction(game.HttpPost, function(...)
-            print("[🛡️ Proteção Ativada] Bloqueando Logs do Byfron.")
-            return nil
+            return nil  -- Simplesmente ignora chamadas HTTP suspeitas
         end)
 
-        -- Impede tentativa de fechar o jogo
+        -- Previne fechamento do jogo
         game:GetService("CoreGui").ChildRemoved:Connect(function(child)
             if child.Name == "RobloxPromptGui" then
-                print("[⚠️ Proteção Ativada] Tentativa de Fechar Jogo Detectada.")
-                wait(9e9)
+                wait(9e9)  -- Trava a execução indefinidamente
             end
         end)
 
-        -- Função para exibir a mensagem na tela
+        -- Exibe alerta na tela
         local function showMessage(message)
-            local screenGui = Instance.new("ScreenGui")
-            screenGui.Parent = game:GetService("CoreGui")
-
-            local textLabel = Instance.new("TextLabel")
+            local screenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+            local textLabel = Instance.new("TextLabel", screenGui)
             textLabel.Size = UDim2.new(0, 400, 0, 100)
             textLabel.Position = UDim2.new(0.5, -200, 0, 10)
             textLabel.Text = message
             textLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
             textLabel.TextSize = 30
-            textLabel.TextStrokeTransparency = 0.8
             textLabel.BackgroundTransparency = 1
-            textLabel.AnchorPoint = Vector2.new(0.5, 0)
-            textLabel.Parent = screenGui
-
-            -- Remove a mensagem após 2 segundos
             wait(2)
             screenGui:Destroy()
         end
 
-        -- Bloqueia qualquer tipo de denúncia ou relatório
+        -- Bloqueia denúncias e relatórios
         local function blockAllReports()
             local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-            -- Bloqueia a denúncia de jogadores
-            local reportEvent = ReplicatedStorage:FindFirstChild("Report")
-            if reportEvent then
-                local oldFire = reportEvent.FireServer
-                reportEvent.FireServer = newcclosure(function(self, ...)
-                    print("[🛡️ Proteção Ativada] Tentativa de denúncia bloqueada.")
-                    showMessage("Alguém Te Denunciou!! ( Bloqueado )")  -- Exibe a mensagem
-                end)
-            end
-
-            -- Bloqueia outros tipos de relatórios, como falhas e problemas técnicos
-            local reportBugEvent = ReplicatedStorage:FindFirstChild("BugReport")
-            if reportBugEvent then
-                local oldFireBug = reportBugEvent.FireServer
-                reportBugEvent.FireServer = newcclosure(function(self, ...)
-                    print("[🛡️ Proteção Ativada] Tentativa de relatar bug bloqueada.")
-                    showMessage("Alguém Te Denunciou!! ( Bloqueado )")  -- Exibe a mensagem
-                end)
-            end
-
-            -- Bloqueia a solicitação de feedback de falhas de servidor
-            local reportServerFailEvent = ReplicatedStorage:FindFirstChild("ServerFailReport")
-            if reportServerFailEvent then
-                local oldFireFail = reportServerFailEvent.FireServer
-                reportServerFailEvent.FireServer = newcclosure(function(self, ...)
-                    print("[🛡️ Proteção Ativada] Tentativa de reportar falha do servidor bloqueada.")
-                    showMessage("Alguém Te Denunciou!! ( Bloqueado )")  -- Exibe a mensagem
-                end)
+            for _, reportName in pairs({"Report", "BugReport", "ServerFailReport"}) do
+                local event = ReplicatedStorage:FindFirstChild(reportName)
+                if event then
+                    local oldFire = event.FireServer
+                    event.FireServer = newcclosure(function()
+                        showMessage("Alguém Te Denunciou!! ( Bloqueado )")
+                    end)
+                end
             end
         end
-
-        blockAllReports()  -- Ativa o bloqueio de todos os tipos de denúncia
+        blockAllReports()
 
         print("[🔰] Anti-Tudo ativado!")
     else
-        -- Desativa inatividade
-        game:GetService("Players").LocalPlayer.Idled:Connect(function() end)
         print("[🔰] Anti-Tudo desativado!")
     end
 end)
