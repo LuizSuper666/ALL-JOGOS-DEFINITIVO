@@ -81,14 +81,31 @@ createButton("Anti-Tudo", 10, function(active)
     end
 end)
 
--- ✈️ Voar (Corrigido)
+-- Imortal
+createButton("Imortal", 60, function(active)
+    local player = game:GetService("Players").LocalPlayer
+    local char = player.Character
+    local humanoid = char and char:FindFirstChild("Humanoid")
+
+    if active and humanoid then
+        humanoid.Health = humanoid.Health + humanoid.MaxHealth
+        humanoid.HealthChanged:Connect(function()
+            humanoid.Health = humanoid.MaxHealth
+        end)
+        print("[🔰] Modo Imortal ativado!")
+    else
+        print("[🔰] Modo Imortal desativado!")
+    end
+end)
+
+-- Voar (Corrigido)
 local flying = false
 local speed = 60
 local flyBodyVelocity
 local flyGyro
 local flyConnection
 
-createButton("Voar", 60, function(active)
+createButton("Voar", 110, function(active)
     local player = game:GetService("Players").LocalPlayer
     local char = player.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
@@ -126,11 +143,11 @@ createButton("Voar", 60, function(active)
     end
 end)
 
--- 🚪 Atravessar paredes (Corrigido)
+-- Atravessar paredes (Corrigido)
 local atravessarAtivo = false
 local atravessarConnection
 
-createButton("Atravessar Paredes", 110, function(active)
+createButton("Atravessar Paredes", 160, function(active)
     local char = game:GetService("Players").LocalPlayer.Character
     atravessarAtivo = active
 
@@ -161,7 +178,7 @@ createButton("Atravessar Paredes", 110, function(active)
 end)
 
 -- Aumentar Velocidade x3
-createButton("Aumentar Velocidade x3", 160, function(active)
+createButton("Aumentar Velocidade x3", 210, function(active)
     local player = game:GetService("Players").LocalPlayer
     local char = player.Character
     if char then
@@ -176,7 +193,7 @@ end)
 local ESPEnabled = false
 local ESPObjects = {}
 
-createButton("ESP", 210, function(active)
+createButton("ESP", 260, function(active)
     ESPEnabled = active
 
     if not ESPEnabled then
@@ -224,7 +241,7 @@ createButton("ESP", 210, function(active)
 end)
 
 -- Teleporte para o jogador mais próximo
-createButton("Teleporte p/ Mais Próximo", 260, function()
+createButton("Teleporte p/ Mais Próximo", 310, function()
     local player = game.Players.LocalPlayer
     local char = player.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
