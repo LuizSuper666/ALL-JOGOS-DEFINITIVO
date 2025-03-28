@@ -14,7 +14,7 @@ Panel.Visible = false
 Panel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 
 local ScrollingFrame = Instance.new("ScrollingFrame", Panel)
-ScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
+ScrollingFrame.Size = UDim2.new(1, 0, 2, 0)
 ScrollingFrame.CanvasSize = UDim2.new(0, 0, 1.5, 0)
 ScrollingFrame.ScrollBarThickness = 5
 
@@ -63,112 +63,67 @@ createButton("Anti-Tudo", 10, function(active)
         for _, v in pairs(getconnections(Players.LocalPlayer.Idled)) do v:Disable() end
 
         local oldHttpPost = hookfunction(game.HttpPost, function(...)
-            print("[🛡️ Proteção Ativada] Bloqueando Logs do Byfron.")
             return nil
         end)
 
         game:GetService("CoreGui").ChildRemoved:Connect(function(child)
             if child.Name == "RobloxPromptGui" then
-                print("[⚠️ Proteção Ativada] Tentativa de Fechar Jogo Detectada.")
                 wait(9e9)
             end
         end)
 
         print("[🔰] Anti-Tudo ativado!")
     else
-        game:GetService("Players").LocalPlayer.Idled:Connect(function() end)
-        print("[🔰] Anti-Tudo desativado!")
+        print("[🔰] Anti-Tudo desativado! (Mas pode precisar reiniciar)")
     end
 end)
 
--- ✈️ Voar (Corrigido)
+-- Imortalidade
+local imortalAtivo = false
+local imortalConnection
+
+createButton("Imortalidade", 60, function(active)
+    local player = game:GetService("Players").LocalPlayer
+    local char = player.Character
+    local humanoid = char and char:FindFirstChild("Humanoid")
+    
+    imortalAtivo = active
+    
+    if imortalAtivo and humanoid then
+        humanoid.Health = humanoid.MaxHealth
+        imortalConnection = humanoid.HealthChanged:Connect(function()
+            if imortalAtivo then
+                humanoid.Health = humanoid.MaxHealth
+            end
+        end)
+    else
+        if imortalConnection then
+            imortalConnection:Disconnect()
+            imortalConnection = nil
+        end
+    end
+end)
+
+-- ✈️ Voar
 local flying = false
-local speed = 60
-local flyBodyVelocity
-local flyGyro
 local flyConnection
 
-createButton("Voar", 60, function(active)
+createButton("Voar", 110, function(active)
     local player = game:GetService("Players").LocalPlayer
     local char = player.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
 
     if active and root then
         flying = true
-        flyBodyVelocity = Instance.new("BodyVelocity", root)
-        flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
-        flyBodyVelocity.MaxForce = Vector3.new(4000, 4000, 4000)
-
-        flyGyro = Instance.new("BodyGyro", root)
-        flyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-        flyGyro.CFrame = root.CFrame
-
+        root.Anchored = true
         flyConnection = game:GetService("RunService").RenderStepped:Connect(function()
-            if not flying then return end
             local cam = workspace.CurrentCamera
-            flyGyro.CFrame = cam.CFrame
-            flyBodyVelocity.Velocity = cam.CFrame.LookVector * speed
+            root.CFrame = root.CFrame:Lerp(cam.CFrame, 0.3)
         end)
     else
         flying = false
-        if flyConnection then 
-            flyConnection:Disconnect() 
-            flyConnection = nil 
-        end
-        if flyBodyVelocity then 
-            flyBodyVelocity:Destroy() 
-            flyBodyVelocity = nil 
-        end
-        if flyGyro then 
-            flyGyro:Destroy() 
-            flyGyro = nil 
-        end
-    end
-end)
-
--- 🚪 Atravessar paredes (Corrigido)
-local atravessarAtivo = false
-local atravessarConnection
-
-createButton("Atravessar Paredes", 110, function(active)
-    local char = game:GetService("Players").LocalPlayer.Character
-    atravessarAtivo = active
-
-    if atravessarAtivo then
-        atravessarConnection = game:GetService("RunService").Stepped:Connect(function()
-            if not atravessarAtivo then return end
-            if char then
-                for _, part in pairs(char:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
-                end
-            end
-        end)
-    else
-        if atravessarConnection then 
-            atravessarConnection:Disconnect() 
-            atravessarConnection = nil 
-        end
-        if char then
-            for _, part in pairs(char:GetChildren()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
-            end
-        end
-    end
-end)
-
--- Aumentar Velocidade x3
-createButton("Aumentar Velocidade x3", 160, function(active)
-    local player = game:GetService("Players").LocalPlayer
-    local char = player.Character
-    if char then
-        local humanoid = char:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = active and 48 or 16
-        end
+        if flyConnection then flyConnection:Disconnect() end
+        if root then root.Anchored = false end
     end
 end)
 
@@ -176,7 +131,7 @@ end)
 local ESPEnabled = false
 local ESPObjects = {}
 
-createButton("ESP", 210, function(active)
+createButton("ESP", 160, function(active)
     ESPEnabled = active
 
     if not ESPEnabled then
@@ -224,7 +179,7 @@ createButton("ESP", 210, function(active)
 end)
 
 -- Teleporte para o jogador mais próximo
-createButton("Teleporte p/ Mais Próximo", 260, function()
+createButton("Teleporte p/ Mais Próximo", 210, function()
     local player = game.Players.LocalPlayer
     local char = player.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
