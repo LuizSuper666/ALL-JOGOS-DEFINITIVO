@@ -15,7 +15,7 @@ Panel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 
 local ScrollingFrame = Instance.new("ScrollingFrame", Panel)
 ScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
-ScrollingFrame.CanvasSize = UDim2.new(0, 0, 2, 0)
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 3, 0)
 ScrollingFrame.ScrollBarThickness = 5
 
 local CloseButton = Instance.new("TextButton", Panel)
