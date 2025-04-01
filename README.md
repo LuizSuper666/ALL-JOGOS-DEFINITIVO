@@ -271,8 +271,8 @@ createButton("ESP", 260, function(active)
     end)
 end)
 
--- Criando um botão para clonar o jogador
-createButton("Criar Clone", 300, function()
+-- Criar Clone
+createButton("Criar Clone", 360, function()
     local player = game.Players.LocalPlayer
     local char = player.Character
     if not char then return end
@@ -280,23 +280,33 @@ createButton("Criar Clone", 300, function()
     -- Criando o clone
     local clone = char:Clone()
     clone.Parent = workspace
-    clone:SetPrimaryPartCFrame(char.PrimaryPart.CFrame + Vector3.new(2, 0, 0))
 
-    -- Configurando aparência e nome visível
+    -- Garantindo que o clone tenha o mesmo tamanho
+    for _, part in pairs(clone:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Size = part.Size  -- Restabelece o tamanho do clone
+            part.CanCollide = true  -- Certifica-se de que o clone tenha colisão
+        end
+    end
+
+    -- Ajustando a posição do clone para ser na mesma posição do jogador
+    clone:SetPrimaryPartCFrame(char.PrimaryPart.CFrame)  -- Mesma posição e rotação
+
+    -- Configurando o nome visível
     clone.Name = player.Name  -- O nome do clone será o mesmo nome do jogador
     local humanoid = clone:FindFirstChildOfClass("Humanoid")
     if humanoid then
         humanoid.DisplayName = player.DisplayName  -- Nome visível sem "(Clone)"
     end
-    
+
     -- Tornando o clone visível para todos
     for _, descendant in pairs(clone:GetDescendants()) do
         if descendant:IsA("BasePart") then
-            descendant.Transparency = 0
-            descendant.CanCollide = true
+            descendant.Transparency = 0  -- Tornando todas as partes visíveis
         end
     end
 end)
+
 -- Teleporte para o jogador mais próximo
 createButton("Teleporte p/ Mais Próximo", 310, function()
     local player = game.Players.LocalPlayer
