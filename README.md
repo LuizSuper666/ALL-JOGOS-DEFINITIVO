@@ -271,42 +271,6 @@ createButton("ESP", 260, function(active)
     end)
 end)
 
--- Criar Clone
-createButton("Criar Clone", 360, function()
-    local player = game.Players.LocalPlayer
-    local char = player.Character
-    if not char then return end
-
-    -- Criando o clone
-    local clone = char:Clone()
-    clone.Parent = workspace
-
-    -- Garantindo que o clone tenha o mesmo tamanho
-    for _, part in pairs(clone:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.Size = part.Size  -- Restabelece o tamanho do clone
-            part.CanCollide = true  -- Certifica-se de que o clone tenha colisão
-        end
-    end
-
-    -- Ajustando a posição do clone para ser na mesma posição do jogador
-    clone:SetPrimaryPartCFrame(char.PrimaryPart.CFrame)  -- Mesma posição e rotação
-
-    -- Configurando o nome visível
-    clone.Name = player.Name  -- O nome do clone será o mesmo nome do jogador
-    local humanoid = clone:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        humanoid.DisplayName = player.DisplayName  -- Nome visível sem "(Clone)"
-    end
-
-    -- Tornando o clone visível para todos
-    for _, descendant in pairs(clone:GetDescendants()) do
-        if descendant:IsA("BasePart") then
-            descendant.Transparency = 0  -- Tornando todas as partes visíveis
-        end
-    end
-end)
-
 -- Teleporte para o jogador mais próximo
 createButton("Teleporte p/ Mais Próximo", 310, function()
     local player = game.Players.LocalPlayer
