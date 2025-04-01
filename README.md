@@ -272,7 +272,7 @@ createButton("ESP", 260, function(active)
 end)
 
 -- Criando um botão para clonar o jogador
-createButton("Criar Clone", 360, function()
+createButton("Criar Clone", 300, function()
     local player = game.Players.LocalPlayer
     local char = player.Character
     if not char then return end
@@ -297,7 +297,6 @@ createButton("Criar Clone", 360, function()
         end
     end
 end)
-
 -- Teleporte para o jogador mais próximo
 createButton("Teleporte p/ Mais Próximo", 310, function()
     local player = game.Players.LocalPlayer
