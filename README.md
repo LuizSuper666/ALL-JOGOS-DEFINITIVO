@@ -271,6 +271,33 @@ createButton("ESP", 260, function(active)
     end)
 end)
 
+-- Criando um botão para clonar o jogador
+createButton("Criar Clone", 360, function()
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    if not char then return end
+
+    -- Criando o clone
+    local clone = char:Clone()
+    clone.Parent = workspace
+    clone:SetPrimaryPartCFrame(char.PrimaryPart.CFrame + Vector3.new(2, 0, 0))
+
+    -- Configurando aparência e nome visível
+    clone.Name = player.Name  -- O nome do clone será o mesmo nome do jogador
+    local humanoid = clone:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.DisplayName = player.DisplayName  -- Nome visível sem "(Clone)"
+    end
+    
+    -- Tornando o clone visível para todos
+    for _, descendant in pairs(clone:GetDescendants()) do
+        if descendant:IsA("BasePart") then
+            descendant.Transparency = 0
+            descendant.CanCollide = true
+        end
+    end
+end)
+
 -- Teleporte para o jogador mais próximo
 createButton("Teleporte p/ Mais Próximo", 310, function()
     local player = game.Players.LocalPlayer
@@ -296,6 +323,35 @@ createButton("Teleporte p/ Mais Próximo", 310, function()
 
         if closestPlayer then
             root.CFrame = closestPlayer.CFrame
+        end
+    end
+end)
+
+-- Teleporte para o jogador mais distante
+createButton("Teleporte p/ Mais Distante", 360, function()
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+
+    if root then
+        local farthestPlayer
+        local farthestDistance = 0
+
+        for _, otherPlayer in pairs(game.Players:GetPlayers()) do
+            if otherPlayer ~= player and otherPlayer.Character then
+                local otherRoot = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if otherRoot then
+                    local distance = (root.Position - otherRoot.Position).Magnitude
+                    if distance > farthestDistance then
+                        farthestDistance = distance
+                        farthestPlayer = otherRoot
+                    end
+                end
+            end
+        end
+
+        if farthestPlayer then
+            root.CFrame = farthestPlayer.CFrame
         end
     end
 end)
