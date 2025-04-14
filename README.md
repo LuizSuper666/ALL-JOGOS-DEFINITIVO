@@ -1,7 +1,3 @@
-
-
-
-
 -- Criando a interface flutuante
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "PainelTop"
@@ -123,34 +119,27 @@ end)
 local godModeAtivado = false
 local function aplicarGodMode()
     local player = game:GetService("Players").LocalPlayer
-    local function proteger(humanoid)
-        if humanoid and humanoid:IsA("Humanoid") then
-            -- Impede danos normais
-            if humanoid:FindFirstChild("creator") then
-                humanoid.creator:Destroy()
-            end
-            -- Hooka função TakeDamage
-            humanoid.TakeDamage = function() end
-
-            -- Se mesmo assim levar dano, regenera
-            humanoid.HealthChanged:Connect(function()
-                if godModeAtivado and humanoid.Health < humanoid.MaxHealth then
-                    humanoid.Health = humanoid.MaxHealth
-                end
-            end)
-        end
-    end
-
     local char = player.Character or player.CharacterAdded:Wait()
-    local hum = char:FindFirstChildWhichIsA("Humanoid")
-    if hum then proteger(hum) end
+    local humanoid = char:FindFirstChildWhichIsA("Humanoid")
+
+    if humanoid then
+        -- Impede danos normais, sobrescrevendo a função TakeDamage
+        humanoid.TakeDamage = function() end
+        
+        -- Se ainda assim sofrer dano, regenera
+        humanoid.HealthChanged:Connect(function()
+            if godModeAtivado and humanoid.Health < humanoid.MaxHealth then
+                humanoid.Health = humanoid.MaxHealth
+            end
+        end)
+    end
 end
 
 -- Botão Imortal
 createButton("Imortal", 60, function(active)
     godModeAtivado = active
-    aplicarGodMode()
     if active then
+        aplicarGodMode()
         print("[🔰] Modo Imortal ativado!")
     else
         print("[🔰] Modo Imortal desativado!")
@@ -159,7 +148,7 @@ end)
 
 -- Reaplicar ao morrer
 game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function()
-    wait(1)
+    wait(1)  -- Esperar um pouco até o personagem carregar completamente
     if godModeAtivado then
         aplicarGodMode()
     end
