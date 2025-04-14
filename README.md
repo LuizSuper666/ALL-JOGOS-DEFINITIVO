@@ -115,24 +115,58 @@ createButton("Anti-Tudo", 10, function(active)
     end
 end)
 
---- GODMODE REAL
+-- GODMODE REAL + ANTI-MORTE
 local godModeAtivado = false
+
 local function aplicarGodMode()
     local player = game:GetService("Players").LocalPlayer
-    local char = player.Character or player.CharacterAdded:Wait()
-    local humanoid = char:FindFirstChildWhichIsA("Humanoid")
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
 
-    if humanoid then
-        -- Desabilita a colisão para impedir o dano físico
-        humanoid:SetAttribute("CanTakeDamage", false)
+    humanoid.BreakJointsOnDeath = false
 
-        -- Se ainda assim sofrer dano, regenera a saúde
-        humanoid.HealthChanged:Connect(function()
-            if godModeAtivado and humanoid.Health < humanoid.MaxHealth then
-                humanoid.Health = humanoid.MaxHealth
-            end
-        end)
+    for _, conn in ipairs(getconnections(humanoid.HealthChanged)) do
+        conn:Disable()
     end
+
+    humanoid.HealthChanged:Connect(function()
+        if godModeAtivado and humanoid.Health < humanoid.MaxHealth then
+            humanoid.Health = humanoid.MaxHealth
+        end
+    end)
+
+    for _, obj in ipairs(character:GetDescendants()) do
+        if obj:IsA("Script") or obj:IsA("LocalScript") then
+            pcall(function() obj:Destroy() end)
+        end
+    end
+
+    humanoid.PlatformStand = false
+end
+
+-- Anti Remote Kill básico
+local function bloquearRemoteKills()
+    local mt = getrawmetatable(game)
+    local oldNamecall = mt.__namecall
+    setreadonly(mt, false)
+
+    mt.__namecall = newcclosure(function(self, ...)
+        local args = {...}
+        local method = getnamecallmethod()
+
+        -- Bloqueia eventos que envolvem morte, dano ou kick
+        if method == "FireServer" and typeof(self) == "Instance" then
+            local name = self.Name:lower()
+            if name:find("kill") or name:find("damage") or name:find("kick") then
+                warn("[⚠️] Tentativa de Remote Kill bloqueada:", self:GetFullName())
+                return
+            end
+        end
+
+        return oldNamecall(self, unpack(args))
+    end)
+
+    setreadonly(mt, true)
 end
 
 -- Botão Imortal
@@ -140,20 +174,20 @@ createButton("Imortal", 60, function(active)
     godModeAtivado = active
     if active then
         aplicarGodMode()
-        print("[🔰] Modo Imortal ativado!")
+        bloquearRemoteKills()
+        print("[🔰] Modo Imortal ativado com anti-remote!")
     else
         print("[🔰] Modo Imortal desativado!")
     end
 end)
 
--- Reaplicar ao morrer
+-- Reaplica ao morrer
 game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function()
-    wait(1)  -- Espera até o personagem carregar completamente
+    wait(1)
     if godModeAtivado then
         aplicarGodMode()
     end
 end)
-
 -- Voar (Corrigido)
 local flying = false
 local speed = 60
