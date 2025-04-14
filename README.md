@@ -115,7 +115,7 @@ createButton("Anti-Tudo", 10, function(active)
     end
 end)
 
--- GODMODE REAL
+--- GODMODE REAL
 local godModeAtivado = false
 local function aplicarGodMode()
     local player = game:GetService("Players").LocalPlayer
@@ -123,10 +123,10 @@ local function aplicarGodMode()
     local humanoid = char:FindFirstChildWhichIsA("Humanoid")
 
     if humanoid then
-        -- Impede danos normais, sobrescrevendo a função TakeDamage
-        humanoid.TakeDamage = function() end
-        
-        -- Se ainda assim sofrer dano, regenera
+        -- Desabilita a colisão para impedir o dano físico
+        humanoid:SetAttribute("CanTakeDamage", false)
+
+        -- Se ainda assim sofrer dano, regenera a saúde
         humanoid.HealthChanged:Connect(function()
             if godModeAtivado and humanoid.Health < humanoid.MaxHealth then
                 humanoid.Health = humanoid.MaxHealth
@@ -148,7 +148,7 @@ end)
 
 -- Reaplicar ao morrer
 game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function()
-    wait(1)  -- Esperar um pouco até o personagem carregar completamente
+    wait(1)  -- Espera até o personagem carregar completamente
     if godModeAtivado then
         aplicarGodMode()
     end
