@@ -20,48 +20,11 @@ ScrollingFrame.ScrollBarThickness = 5
 
 local CloseButton = Instance.new("TextButton", Panel)
 CloseButton.Size = UDim2.new(0, 30, 0, 30)
-ClolocalseButton.Position = UDim2.new(1, -30, 0, 0)
+CloseButton.Position = UDim2.new(1, -30, 0, 0)
 CloseButton.Text = "X"
 CloseButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 
-FloatingButton.MouseButtonIntangível
- intangivelAtivo = false
-local intangivelConnections = {}
-
-createButton("Intangível", 90, function(active)
-    intangivelAtivo = active
-    local player = game:GetService("Players").LocalPlayer
-    local char = player.Character
-
-    if char then
-        for _, part in pairs(char:GetChildren()) do
-            if part:IsA("BasePart") then
-                -- Desativa colisão e toque
-                part.CanCollide = not active
-                part.CanTouch = not active
-                part.CanQuery = not active
-            end
-        end
-
-        -- Desativa eventos de dano por .Touched
-        if active then
-            for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    local conn = part.Touched:Connect(function() end)
-                    table.insert(intangivelConnections, conn)
-                end
-            end
-        else
-            -- Reconecta os Touched
-            for _, conn in ipairs(intangivelConnections) do
-                conn:Disconnect()
-            end
-            intangivelConnections = {}
-        end
-    end
-
-    print(active and "[🛡️] Intangível ativado!" or "[🛡️] Intangível desativado!")
-end)1Click:Connect(function()
+FloatingButton.MouseButton1Click:Connect(function()
     Panel.Visible = not Panel.Visible
 end)
 
@@ -164,56 +127,6 @@ createButton("Imortal", 60, function(active)
     else
         print("[🔰] Modo Imortal desativado!")
     end
-end)
-
-
--- Intangível 
-local intangivelAtivo = false
-local intangivelConnections = {}
-
-createButton("Intangível", 90, function(active)
-    intangivelAtivo = active
-    local player = game:GetService("Players").LocalPlayer
-    local char = player.Character
-
-    if char then
-        for _, part in pairs(char:GetChildren()) do
-            if part:IsA("BasePart") then
-                -- Desativa colisão e toque
-                part.CanCollide = not active
-                part.CanTouch = not active
-                part.CanQuery = not active
-                
-                -- Define a transparência do personagem
-                if active then
-                    part.Transparency = 0.5 -- Torna o personagem semi-transparente
-                else
-                    part.Transparency = 0 -- Restaura a opacidade normal
-                end
-            end
-        end
-
-        -- Desativa eventos de dano por .Touched e faz o personagem invulnerável
-        if active then
-            for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    local conn = part.Touched:Connect(function(hit)
-                        -- Se o personagem for tocado por algo, não faz nada
-                        return
-                    end)
-                    table.insert(intangivelConnections, conn)
-                end
-            end
-        else
-            -- Reconecta os eventos de Touched
-            for _, conn in ipairs(intangivelConnections) do
-                conn:Disconnect()
-            end
-            intangivelConnections = {}
-        end
-    end
-
-    print(active and "[🛡️] Intangível ativado!" or "[🛡️] Intangível desativado!")
 end)
 
 -- Voar (Corrigido)
