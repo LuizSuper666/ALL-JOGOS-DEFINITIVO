@@ -1,7 +1,14 @@
--- Criando a interface flutuante
-local ScreenGui = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
-local FloatingButton = Instance.new("TextButton", ScreenGui)
 
+
+
+
+-- Criando a interface flutuante
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PainelTop"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game:GetService("CoreGui")
+
+local FloatingButton = Instance.new("TextButton", ScreenGui)
 FloatingButton.Size = UDim2.new(0, 80, 0, 30)
 FloatingButton.Position = UDim2.new(0.9, 0, 0.1, 0)
 FloatingButton.Text = "SCRIPT"
@@ -67,17 +74,17 @@ createButton("Anti-Tudo", 10, function(active)
 
         -- Bloqueia logs HTTP (Byfron)
         local oldHttpPost = hookfunction(game.HttpPost, function(...)
-            return nil  -- Simplesmente ignora chamadas HTTP suspeitas
+            return nil
         end)
 
         -- Previne fechamento do jogo
         game:GetService("CoreGui").ChildRemoved:Connect(function(child)
             if child.Name == "RobloxPromptGui" then
-                wait(9e9)  -- Trava a execução indefinidamente
+                wait(9e9)
             end
         end)
 
-        -- Exibe alerta na tela
+        -- Alerta visual
         local function showMessage(message)
             local screenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
             local textLabel = Instance.new("TextLabel", screenGui)
@@ -112,20 +119,49 @@ createButton("Anti-Tudo", 10, function(active)
     end
 end)
 
--- Imortal
-createButton("Imortal", 60, function(active)
+-- GODMODE REAL
+local godModeAtivado = false
+local function aplicarGodMode()
     local player = game:GetService("Players").LocalPlayer
-    local char = player.Character
-    local humanoid = char and char:FindFirstChild("Humanoid")
+    local function proteger(humanoid)
+        if humanoid and humanoid:IsA("Humanoid") then
+            -- Impede danos normais
+            if humanoid:FindFirstChild("creator") then
+                humanoid.creator:Destroy()
+            end
+            -- Hooka função TakeDamage
+            humanoid.TakeDamage = function() end
 
-    if active and humanoid then
-        humanoid.Health = humanoid.Health + humanoid.MaxHealth
-        humanoid.HealthChanged:Connect(function()
-            humanoid.Health = humanoid.MaxHealth
-        end)
+            -- Se mesmo assim levar dano, regenera
+            humanoid.HealthChanged:Connect(function()
+                if godModeAtivado and humanoid.Health < humanoid.MaxHealth then
+                    humanoid.Health = humanoid.MaxHealth
+                end
+            end)
+        end
+    end
+
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hum = char:FindFirstChildWhichIsA("Humanoid")
+    if hum then proteger(hum) end
+end
+
+-- Botão Imortal
+createButton("Imortal", 60, function(active)
+    godModeAtivado = active
+    aplicarGodMode()
+    if active then
         print("[🔰] Modo Imortal ativado!")
     else
         print("[🔰] Modo Imortal desativado!")
+    end
+end)
+
+-- Reaplicar ao morrer
+game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function()
+    wait(1)
+    if godModeAtivado then
+        aplicarGodMode()
     end
 end)
 
