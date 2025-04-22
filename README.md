@@ -59,52 +59,61 @@ local function createButton(name, y, callback)
     end)
 end
 
--- Anti-Tudo (completo restaurado) createButton("Anti-Tudo", 10, function(active) if active then local mt = getrawmetatable(game) setreadonly(mt, false) local oldNamecall = mt.__namecall mt.__namecall = newcclosure(function(self, ...) local method = getnamecallmethod() if method:lower() == "kick" then return nil end return oldNamecall(self, ...) end)
+-- Anti-Tudo (completo restaurado) 
+createButton("Anti-Tudo", 10, function(active)
+    if active then
+        local mt = getrawmetatable(game)
+        setreadonly(mt, false)
+        local oldNamecall = mt.__namecall
+        mt.__namecall = newcclosure(function(self, ...)
+            local method = getnamecallmethod()
+            if method:lower() == "kick" then return nil end
+            return oldNamecall(self, ...)
+        end)
 
-for _, v in pairs(getconnections(game:GetService("Players").LocalPlayer.Idled)) do
-        v:Disable()
-    end
-
-    hookfunction(game.HttpPost, function(...) return nil end)
-
-    game:GetService("CoreGui").ChildRemoved:Connect(function(child)
-        if child.Name == "RobloxPromptGui" then
-            wait(9e9)
+        for _, v in pairs(getconnections(game:GetService("Players").LocalPlayer.Idled)) do
+            v:Disable()
         end
-    end)
 
-    local function showMessage(message)
-        local screenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-        local textLabel = Instance.new("TextLabel", screenGui)
-        textLabel.Size = UDim2.new(0, 400, 0, 100)
-        textLabel.Position = UDim2.new(0.5, -200, 0, 10)
-        textLabel.Text = message
-        textLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-        textLabel.TextSize = 30
-        textLabel.BackgroundTransparency = 1
-        wait(2)
-        screenGui:Destroy()
-    end
+        hookfunction(game.HttpPost, function(...) return nil end)
 
-    local function blockAllReports()
-        local ReplicatedStorage = game:GetService("ReplicatedStorage")
-        for _, reportName in pairs({"Report", "BugReport", "ServerFailReport"}) do
-            local event = ReplicatedStorage:FindFirstChild(reportName)
-            if event then
-                local oldFire = event.FireServer
-                event.FireServer = newcclosure(function()
-                    showMessage("Alguém Te Denunciou!! ( Bloqueado )")
-                end)
+        game:GetService("CoreGui").ChildRemoved:Connect(function(child)
+            if child.Name == "RobloxPromptGui" then
+                wait(9e9)
+            end
+        end)
+
+        local function showMessage(message)
+            local screenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+            local textLabel = Instance.new("TextLabel", screenGui)
+            textLabel.Size = UDim2.new(0, 400, 0, 100)
+            textLabel.Position = UDim2.new(0.5, -200, 0, 10)
+            textLabel.Text = message
+            textLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+            textLabel.TextSize = 30
+            textLabel.BackgroundTransparency = 1
+            wait(2)
+            screenGui:Destroy()
+        end
+
+        local function blockAllReports()
+            local ReplicatedStorage = game:GetService("ReplicatedStorage")
+            for _, reportName in pairs({"Report", "BugReport", "ServerFailReport"}) do
+                local event = ReplicatedStorage:FindFirstChild(reportName)
+                if event then
+                    local oldFire = event.FireServer
+                    event.FireServer = newcclosure(function()
+                        showMessage("Alguém Te Denunciou!! ( Bloqueado )")
+                    end)
+                end
             end
         end
+
+        blockAllReports()
+        print("[🔰] Anti-Tudo ativado!")
+    else
+        print("[🔰] Anti-Tudo desativado!")
     end
-    blockAllReports()
-
-    print("[🔰] Anti-Tudo ativado!")
-else
-    print("[🔰] Anti-Tudo desativado!")
-end
-
 end)
 
 -- Auto-Heal
