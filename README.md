@@ -202,17 +202,19 @@ local function createButton(name, position, callback)
 end
 
 -- Função que será chamada quando o botão for pressionado
-createButton("Barreira Impenetrável", 160, function(active)
+createButton("Barreira Impenetrável", 60, function(active)
     if active then
         createBarrier()  -- Ativa a barreira
     else
         deactivateBarrier()  -- Desativa a barreira
     end
-end)-- Auto‑Heal (corrigido)
+end)
+
+-- Auto‑Heal (corrigido)
 local healActive   = false
 local healThread   = nil
 
-createButton("Auto-Heal", 60, function(active)
+createButton("Auto-Heal", 110, function(active)
     healActive = active
 
     if healActive and not healThread then
