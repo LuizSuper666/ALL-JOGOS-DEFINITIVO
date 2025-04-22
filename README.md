@@ -133,9 +133,9 @@ if healActive and not healThread then
             local hum = game.Players.LocalPlayer.Character and  
                         game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")  
             if hum and hum.Health > 0 and hum.Health < hum.MaxHealth then  
-                hum.Health = math.min(hum.Health + 10, hum.MaxHealth)  
+                hum.Health = math.min(hum.Health + 100, hum.MaxHealth)  
             end  
-            task.wait(0.1)  
+            task.wait(0.05)  
         end  
     end)  
 elseif not healActive and healThread then  
