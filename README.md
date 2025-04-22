@@ -124,7 +124,7 @@ createButton("Auto-Heal", 60, function(active)
             if hum and hum.Health > 0 and hum.Health < hum.MaxHealth then
                 hum.Health = math.min(hum.Health + 1, hum.MaxHealth)
             end
-            wait(0.1)
+            wait(0.01)
         end
     end)
 end)
