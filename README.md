@@ -199,7 +199,7 @@ local function removeBarrier()
 end
 
 -- Criar o botão "Barreira Impenetrável" no painel
-createButton("Barreira Impenetrável", 50, function(active)
+createButton("Barreira Impenetrável", 110, function(active)
     if active then
         createBarrier()  -- Ativar a barreira
     else
