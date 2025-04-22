@@ -147,6 +147,14 @@ end
 end)
 
 --Barreira Impenetrável
+createButton("Barreira Impenetrável", 110, function(active)
+    if not active then return end
+
+    local player = game.Players.LocalPlayer
+    local humanoid = player.Character and player.Character:WaitForChild("Humanoid")
+
+    local function notificar(msg, cor)
+        local gui = Instance.new("ScreenGui", game.CoreGui)
 createButton("Barreira Impenetrável", 120, function(active)
     if not active then return end
 
@@ -188,20 +196,24 @@ createButton("Barreira Impenetrável", 120, function(active)
         weld.Part0 = barreira
         weld.Part1 = char.HumanoidRootPart
 
-        -- Bloquear interações externas
-        local function bloquearInteracoes()
+        -- Função para bloquear ataques físicos (como espadas)
+        local function bloquearAtaquesFisicos()
             for _, obj in pairs(workspace:GetChildren()) do
                 if obj:IsA("Part") and obj.Parent and obj.Parent:IsA("Player") and obj.Parent ~= player then
-                    -- Se outro jogador ou objeto tentar tocar o jogador, destruir o objeto
+                    -- Verifica se o objeto que colide com a barreira é uma arma (por exemplo, espada)
                     if barreira and barreira:IsPointInRegion(obj.Position) then
-                        obj:Destroy()  -- Destruir projéteis ou partes externas
+                        -- Se o objeto for uma espada ou arma, bloqueia o ataque
+                        if obj.Name:lower():find("sword") or obj.Name:lower():find("weapon") then
+                            obj:Destroy()  -- Destruir a espada ou arma para impedir o ataque
+                            notificar("ATAQUE BLOQUEADO: ARMA DE CORPO A CORPO", Color3.fromRGB(255, 0, 0))
+                        end
                     end
                 end
             end
         end
 
-        -- Conectar a função que bloqueia interações
-        game:GetService("RunService").Heartbeat:Connect(bloquearInteracoes)
+        -- Conectar a função que bloqueia interações físicas
+        game:GetService("RunService").Heartbeat:Connect(bloquearAtaquesFisicos)
 
         -- Regenerar vida quando a barreira for ativada
         local vidaPerdida = humanoid.Health
@@ -227,7 +239,7 @@ createButton("Barreira Impenetrável", 120, function(active)
             notificar("BARRERA IMPENETRÁVEL DESATIVADA", Color3.fromRGB(255, 0, 0))
         end
     end
-end)
+end)        
 
 -- Voar (Corrigido)
 local flying = false
