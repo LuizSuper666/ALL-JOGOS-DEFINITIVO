@@ -14,7 +14,7 @@ FloatingButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
 FloatingButton.Parent = ScreenGui
 
 local Panel = Instance.new("Frame")
-Panel.Size = UDim2.new(0, 200, 0, 400)
+Panel.Size = UDim2.new(0, 180, 0, 280)
 Panel.Position = UDim2.new(0.75, 0, 0.1, 0)
 Panel.Visible = false
 Panel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -26,12 +26,14 @@ ScrollingFrame.CanvasSize = UDim2.new(0, 0, 10, 0)
 ScrollingFrame.ScrollBarThickness = 5
 ScrollingFrame.Parent = Panel
 
+-- Botão X (fechar painel)
 local CloseButton = Instance.new("TextButton")
-CloseButton.Size = UDim2.new(0, 30, 0, 30)
-CloseButton.Position = UDim2.new(1, -30, 0, 0)
-CloseButton.Text = "X"
+CloseButton.Size       = UDim2.new(0, 30, 0, 30)
+CloseButton.Position   = UDim2.new(1, -30, 0, 0)
+CloseButton.Text       = "X"
 CloseButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-CloseButton.Parent = Panel
+CloseButton.Parent     = Panel
+CloseButton.Text = "X"
 
 -- Abrir/Fechar painel
 FloatingButton.MouseButton1Click:Connect(function()
@@ -116,17 +118,29 @@ createButton("Anti-Tudo", 10, function(active)
     end
 end)
 
--- Auto-Heal
+-- Auto‑Heal (corrigido)
+local healActive   = false
+local healThread   = nil
+
 createButton("Auto-Heal", 60, function(active)
-    spawn(function()
-        while active do
-            local hum = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if hum and hum.Health > 0 and hum.Health < hum.MaxHealth then
-                hum.Health = math.min(hum.Health + 1, hum.MaxHealth)
+    healActive = active
+
+    if healActive and not healThread then
+        healThread = task.spawn(function()
+            while healActive do
+                local hum = game.Players.LocalPlayer.Character and
+                            game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if hum and hum.Health > 0 and hum.Health < hum.MaxHealth then
+                    hum.Health = math.min(hum.Health + 10, hum.MaxHealth)
+                end
+                task.wait(0.1)
             end
-            wait(0.01)
-        end
-    end)
+        end)
+    elseif not healActive and healThread then
+        -- Para a thread: setamos healActive=false; loop vai encerrar,
+        -- depois anulamos a referência
+        healThread = nil
+    end
 end)
 
 --Escudo Refletor Supremo + escudo visual
@@ -200,11 +214,11 @@ createButton("Escudo Refletor", 110, function(active)
     setreadonly(mt, true)
 
     humanoid:GetPropertyChangedSignal("Health"):Connect(function()
-        if humanoid.Health <= 10 then
-            humanoid.Health = humanoid.MaxHealth
-            notificar("DANO PREVISTO BLOQUEADO", Color3.fromRGB(255, 0, 0))
-        end
-    end)
+    if humanoid.Health <= humanoid.MaxHealth * 0.99 then
+        humanoid.Health = humanoid.MaxHealth
+        notificar("DANO PREVISTO BLOQUEADO", Color3.fromRGB(255, 0, 0))
+    end
+end)  -- fecha só uma vez
 
     -- Escudo visual com proteção física
     local char = player.Character
@@ -225,8 +239,8 @@ createButton("Escudo Refletor", 110, function(active)
         local weld = Instance.new("WeldConstraint", escudo)
         weld.Part0 = escudo
         weld.Part1 = char.HumanoidRootPart
-    end
-end)
+     end
+ end)
 
 -- Voar (Corrigido)
 local flying = false
@@ -235,7 +249,7 @@ local flyBodyVelocity
 local flyGyro
 local flyConnection
 
-createButton("Voar", 110, function(active)
+createButton("Voar", 160, function(active)
     local player = game:GetService("Players").LocalPlayer
     local char = player.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
@@ -277,7 +291,7 @@ end)
 local atravessarAtivo = false
 local atravessarConnection
 
-createButton("Atravessar Paredes", 160, function(active)
+createButton("Atravessar Paredes", 210, function(active)
     local char = game:GetService("Players").LocalPlayer.Character
     atravessarAtivo = active
 
@@ -307,12 +321,24 @@ createButton("Atravessar Paredes", 160, function(active)
     end
 end)
 
--- Aumentar Velocidade x3
-createButton("Velocidade x3", 160, function(active)
-    local humanoid = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        local base = humanoid.WalkSpeed / 3
-        humanoid.WalkSpeed = active and base * 3 or base
+-- Velocidade x3 (corrigido)
+local speedActive   = false
+local originalSpeed = nil      -- guardará a velocidade padrão
+
+createButton("Velocidade x3", 260, function(active)
+    local hum = game.Players.LocalPlayer.Character and
+                game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+
+    speedActive = active
+    if speedActive then
+        -- guarda só primeira vez
+        originalSpeed = originalSpeed or hum.WalkSpeed
+        hum.WalkSpeed = originalSpeed * 3          -- triplica
+    else
+        if originalSpeed then
+            hum.WalkSpeed = originalSpeed          -- volta ao normal
+        end
     end
 end)
 
@@ -320,7 +346,7 @@ end)
 local ESPEnabled = false
 local ESPObjects = {}
 
-createButton("ESP", 260, function(active)
+createButton("ESP", 310, function(active)
     ESPEnabled = active
 
     if not ESPEnabled then
@@ -368,7 +394,7 @@ createButton("ESP", 260, function(active)
 end)
 
 -- Teleporte para o jogador mais próximo
-createButton("TP p/ Mais Próximo", 210, function()
+createButton("TP p/ Mais Próximo", 360, function()
     local player = game.Players.LocalPlayer
     local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
@@ -388,7 +414,7 @@ createButton("TP p/ Mais Próximo", 210, function()
 end)
 
 -- Teleporte para o jogador mais distante
-createButton("TP p/ Mais Distante", 260, function()
+createButton("TP p/ Mais Distante", 410, function()
     local player = game.Players.LocalPlayer
     local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
