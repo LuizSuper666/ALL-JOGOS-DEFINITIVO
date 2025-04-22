@@ -224,6 +224,155 @@ game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function()
     end
 end)
 
+-- Auto-Heal
+createButton("Auto-Heal", 110, function(active)
+    local humanoid = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if active and humanoid then
+        spawn(function()
+            while active and humanoid and humanoid.Health > 0 do
+                wait(0.1)
+                if humanoid.Health < humanoid.MaxHealth then
+                    humanoid.Health = math.min(humanoid.Health + 1, humanoid.MaxHealth)
+                end
+            end
+        end)
+    end
+end)
+
+-- Escudo Refletor Supremo
+createButton("ESCUDO REFLETOR SUPREMO V2", 360, function(active)
+    if not active then return end
+
+    local player = game:GetService("Players").LocalPlayer
+
+    -- Notificação na tela
+    local function notificar(txt, cor)
+        local gui = Instance.new("ScreenGui", game.CoreGui)
+        gui.Name = "NotificacaoRefletor"
+        local label = Instance.new("TextLabel", gui)
+        label.Size = UDim2.new(0, 500, 0, 40)
+        label.Position = UDim2.new(0.5, -250, 0.05, 0)
+        label.Text = txt
+        label.TextColor3 = cor or Color3.fromRGB(255, 255, 0)
+        label.TextStrokeTransparency = 0
+        label.BackgroundTransparency = 1
+        label.TextScaled = true
+        wait(2)
+        gui:Destroy()
+    end
+
+    -- Refletir o dano
+    local function refletir(origem, dano)
+        if origem and origem.Character and origem.Character:FindFirstChild("Humanoid") then
+            local humanoid = origem.Character:FindFirstChild("Humanoid")
+            humanoid:TakeDamage(dano or 100)
+            notificar("REFLETIDO!", Color3.fromRGB(255, 0, 0))
+            warn("[⚔️] Dano refletido para:", origem.Name)
+        end
+    end
+
+    -- Lista completa de comandos perigosos
+    local blockedWords = {
+        -- Comandos clássicos de punição
+        "kick", "ban", "kill", "explode", "punish", "jail", "reset", "break", "burn", "freeze",
+        "lag", "slow", "crash", "trap", "void", "voidkill", "arrest", "eject", "loopkill",
+
+        -- Comandos troll ou visuais
+        "fling", "spin", "smash", "yeet", "nuke", "smite", "drag", "dragdown", "launch", "confuse",
+        "control", "float", "seize", "blind", "mute", "explodehead", "shrink", "grow", "invert",
+        "disorient", "bounce", "wave", "forcefield", "gravity", "poop", "vomit", "fart", "pee",
+        "danceforcibly", "dancefreeze", "stun", "shock", "snare", "sit", "kneel", "strip", "infect",
+        "glitch", "trapkill", "collapse", "bald", "ghostify", "removeclothes", "spinhead", "launchup",
+        "explodelegs", "explodearms", "swap", "telekill", "messup", "crush", "shatter", "electrocute",
+        "whirl", "swirl", "suffocate", "fade", "disappear", "explodebody", "demolish", "disassemble",
+        "pulverize", "flatten", "implode", "explodeface", "vomitloop", "burnloop", "pooploop", "spinloop"
+    }
+
+    -- Proteção contra remotes e comandos
+    local mt = getrawmetatable(game)
+    local old = mt.__namecall
+    setreadonly(mt, false)
+
+    mt.__namecall = newcclosure(function(self, ...)
+        local args = {...}
+        local method = getnamecallmethod()
+
+        if method == "FireServer" or method == "InvokeServer" then
+            local remoteName = self.Name:lower()
+            for _, word in ipairs(blockedWords) do
+                if remoteName:find(word) then
+                    notificar("ATAQUE BLOQUEADO: " .. word:upper())
+                    for _, v in pairs(args) do
+                        if typeof(v) == "Instance" and v:IsA("Player") and v ~= player then
+                            refletir(v, 100)
+                        end
+                    end
+                    return nil
+                end
+            end
+
+            for _, arg in ipairs(args) do
+                if typeof(arg) == "string" then
+                    for _, word in ipairs(blockedWords) do
+                        if arg:lower():find(word) then
+                            notificar("COMANDO BLOQUEADO: " .. word:upper())
+                            return nil
+                        end
+                    end
+                end
+            end
+        elseif method == "Kick" then
+            notificar("TENTATIVA DE KICK BLOQUEADA", Color3.fromRGB(255, 100, 100))
+            return nil
+        end
+
+        return old(self, unpack(args))
+    end)
+
+    setreadonly(mt, true)
+
+    -- Proteção contra dano fatal
+    local humanoid = player.Character and player.Character:WaitForChild("Humanoid")
+    humanoid.BreakJointsOnDeath = false
+    humanoid:GetPropertyChangedSignal("Health"):Connect(function()
+        if humanoid.Health <= 1 then
+            humanoid.Health = humanoid.MaxHealth
+            notificar("DANO FATAL BLOQUEADO", Color3.fromRGB(255, 0, 0))
+        end
+    end)
+
+    -- Observa pastas para detectar scripts perigosos
+    local function observarPasta(pasta)
+        pasta.ChildAdded:Connect(function(child)
+            local name = child.Name:lower()
+            for _, palavra in ipairs(blockedWords) do
+                if name:find(palavra) then
+                    notificar("AÇÃO DE ADMIN DETECTADA: " .. palavra:upper(), Color3.fromRGB(255, 150, 0))
+                    wait(0.2)
+                    child:Destroy()
+                end
+            end
+        end)
+    end
+
+    observarPasta(game:GetService("Workspace"))
+    observarPasta(game:GetService("ReplicatedStorage"))
+    observarPasta(game:GetService("StarterGui"))
+    observarPasta(game:GetService("CoreGui"))
+
+    -- Monitora comandos no chat
+    game.Players.LocalPlayer.Chatted:Connect(function(msg)
+    local lower = msg:lower()
+    for _, palavra in ipairs(blockedWords) do
+        if lower:find("/" .. palavra) or lower:find(":" .. palavra) or lower:find(";" .. palavra) then
+            notificar("COMANDO NO CHAT BLOQUEADO: " .. palavra:upper(), Color3.fromRGB(255, 200, 0))
+        end
+    end
+end)
+
+    notificar("ESCUDO REFLETOR SUPREMO ATIVADO!", Color3.fromRGB(0, 255, 0))
+end)
+
 -- Voar (Corrigido)
 local flying = false
 local speed = 60
@@ -304,14 +453,11 @@ createButton("Atravessar Paredes", 160, function(active)
 end)
 
 -- Aumentar Velocidade x3
-createButton("Aumentar Velocidade x3", 210, function(active)
-    local player = game:GetService("Players").LocalPlayer
-    local char = player.Character
-    if char then
-        local humanoid = char:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = active and 48 or 16
-        end
+createButton("Velocidade x3", 160, function(active)
+    local humanoid = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        local base = humanoid.WalkSpeed / 3
+        humanoid.WalkSpeed = active and base * 3 or base
     end
 end)
 
@@ -367,59 +513,41 @@ createButton("ESP", 260, function(active)
 end)
 
 -- Teleporte para o jogador mais próximo
-createButton("Teleporte p/ Mais Próximo", 310, function()
+createButton("TP p/ Mais Próximo", 210, function()
     local player = game.Players.LocalPlayer
-    local char = player.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-
-    if root then
-        local closestPlayer
-        local closestDistance = math.huge
-
-        for _, otherPlayer in pairs(game.Players:GetPlayers()) do
-            if otherPlayer ~= player and otherPlayer.Character then
-                local otherRoot = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if otherRoot then
-                    local distance = (root.Position - otherRoot.Position).Magnitude
-                    if distance < closestDistance then
-                        closestDistance = distance
-                        closestPlayer = otherRoot
-                    end
-                end
+    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    local alvo, menor = nil, math.huge
+    for _, plr in ipairs(game.Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local dist = (root.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+            if dist < menor then
+                menor = dist
+                alvo = plr.Character.HumanoidRootPart
             end
         end
-
-        if closestPlayer then
-            root.CFrame = closestPlayer.CFrame
-        end
+    end
+    if alvo then
+        root.CFrame = alvo.CFrame + Vector3.new(2, 0, 2)
     end
 end)
 
 -- Teleporte para o jogador mais distante
-createButton("Teleporte p/ Mais Distante", 360, function()
+createButton("TP p/ Mais Distante", 260, function()
     local player = game.Players.LocalPlayer
-    local char = player.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-
-    if root then
-        local farthestPlayer
-        local farthestDistance = 0
-
-        for _, otherPlayer in pairs(game.Players:GetPlayers()) do
-            if otherPlayer ~= player and otherPlayer.Character then
-                local otherRoot = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if otherRoot then
-                    local distance = (root.Position - otherRoot.Position).Magnitude
-                    if distance > farthestDistance then
-                        farthestDistance = distance
-                        farthestPlayer = otherRoot
-                    end
-                end
+    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    local alvo, maior = nil, 0
+    for _, plr in ipairs(game.Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local dist = (root.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+            if dist > maior then
+                maior = dist
+                alvo = plr.Character.HumanoidRootPart
             end
         end
-
-        if farthestPlayer then
-            root.CFrame = farthestPlayer.CFrame
-        end
+    end
+    if alvo then
+        root.CFrame = alvo.CFrame + Vector3.new(2, 0, 2)
     end
 end)
