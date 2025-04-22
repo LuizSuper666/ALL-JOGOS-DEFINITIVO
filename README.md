@@ -161,7 +161,7 @@ local function criarBarreira()
     local barrier = Instance.new("Part")
     barrier.Name = "Barreira"
     barrier.Shape = Enum.PartType.Ball
-    barrier.Size = Vector3.new(12, 12, 12) -- Ajusta o tamanho da barreira
+    barrier.Size = Vector3.new(24, 24, 24) -- Ajusta o tamanho da barreira
     barrier.Transparency = 0.5 -- Torna a barreira semi-transparente
     barrier.Material = Enum.Material.ForceField
     barrier.Color = Color3.fromRGB(0, 0, 255) -- Azul
