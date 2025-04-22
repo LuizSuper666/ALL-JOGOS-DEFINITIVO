@@ -147,99 +147,65 @@ end
 end)
 
 --Barreira Impenetrável
-createButton("Barreira Impenetrável", 110, function(active)
-    if not active then return end
+-- Variáveis
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local barrier = nil
+local healingEnabled = false
 
-    local player = game.Players.LocalPlayer
-    local humanoid = player.Character and player.Character:WaitForChild("Humanoid")
+-- Função para criar a barreira
+local function createBarrier()
+    if char and char:FindFirstChild("Humanoid") then
+        -- Criar a barreira invisível ao redor do jogador
+        barrier = Instance.new("Part")
+        barrier.Size = Vector3.new(10, 10, 10)
+        barrier.Shape = Enum.PartType.Ball
+        barrier.Position = char.HumanoidRootPart.Position
+        barrier.Anchored = true
+        barrier.CanCollide = false
+        barrier.Transparency = 0.5
+        barrier.BrickColor = BrickColor.new("Bright blue")
+        barrier.Parent = workspace
 
-    local function notificar(msg, cor)
-        local gui = Instance.new("ScreenGui", game.CoreGui)
-createButton("Barreira Impenetrável", 120, function(active)
-    if not active then return end
+        -- Habilitar a cura instantânea
+        healingEnabled = true
 
-    local player = game.Players.LocalPlayer
-    local humanoid = player.Character and player.Character:WaitForChild("Humanoid")
-
-    local function notificar(msg, cor)
-        local gui = Instance.new("ScreenGui", game.CoreGui)
-        local lbl = Instance.new("TextLabel", gui)
-        lbl.Size = UDim2.new(0, 500, 0, 40)
-        lbl.Position = UDim2.new(0.5, -250, 0.05, 0)
-        lbl.Text = msg
-        lbl.TextColor3 = cor or Color3.fromRGB(255, 255, 0)
-        lbl.BackgroundTransparency = 1
-        lbl.TextScaled = true
-        wait(2)
-        gui:Destroy()
-    end
-
-    local function criarBarreira()
-        local char = player.Character
-        if not char then return end
-
-        -- Cria a barreira semi-transparente
-        local barreira = Instance.new("Part")
-        barreira.Name = "Barreira"
-        barreira.Shape = Enum.PartType.Ball
-        barreira.Size = Vector3.new(20, 20, 20)
-        barreira.Transparency = 0.5
-        barreira.Material = Enum.Material.SmoothPlastic
-        barreira.Color = Color3.fromRGB(0, 0, 255)
-        barreira.CanCollide = true
-        barreira.Anchored = false  -- Para que a barreira siga o jogador
-        barreira.Parent = char
-        barreira.CFrame = char.HumanoidRootPart.CFrame
-
-        -- Criar a barreira ao redor do jogador e mover com ele
-        local weld = Instance.new("WeldConstraint", barreira)
-        weld.Part0 = barreira
-        weld.Part1 = char.HumanoidRootPart
-
-        -- Função para bloquear ataques físicos (como espadas)
-        local function bloquearAtaquesFisicos()
-            for _, obj in pairs(workspace:GetChildren()) do
-                if obj:IsA("Part") and obj.Parent and obj.Parent:IsA("Player") and obj.Parent ~= player then
-                    -- Verifica se o objeto que colide com a barreira é uma arma (por exemplo, espada)
-                    if barreira and barreira:IsPointInRegion(obj.Position) then
-                        -- Se o objeto for uma espada ou arma, bloqueia o ataque
-                        if obj.Name:lower():find("sword") or obj.Name:lower():find("weapon") then
-                            obj:Destroy()  -- Destruir a espada ou arma para impedir o ataque
-                            notificar("ATAQUE BLOQUEADO: ARMA DE CORPO A CORPO", Color3.fromRGB(255, 0, 0))
-                        end
-                    end
-                end
-            end
-        end
-
-        -- Conectar a função que bloqueia interações físicas
-        game:GetService("RunService").Heartbeat:Connect(bloquearAtaquesFisicos)
-
-        -- Regenerar vida quando a barreira for ativada
-        local vidaPerdida = humanoid.Health
+        -- Conectar função de cura automática ao dano do jogador
+        local humanoid = char:WaitForChild("Humanoid")
         humanoid.HealthChanged:Connect(function()
-            if humanoid.Health < vidaPerdida then
-                humanoid.Health = vidaPerdida
-                notificar("VIDA RESTAURADA!", Color3.fromRGB(0, 255, 0))
+            if healingEnabled and humanoid.Health < humanoid.MaxHealth then
+                local healthLost = humanoid.MaxHealth - humanoid.Health
+                humanoid.Health = humanoid.Health + healthLost
             end
         end)
 
-        return barreira
+        -- Impedir dano de projéteis ou ataques físicos
+        barrier.Touched:Connect(function(hit)
+            if hit.Parent and hit.Parent:IsA("Model") and hit.Parent:FindFirstChild("Humanoid") and hit.Parent ~= char then
+                -- Impede a interação com outros jogadores
+                hit:Destroy()  -- Destruir o projétil ou a espada
+            end
+        end)
     end
+end
 
-    -- Ação de ativar/desativar
-    local barreiraAtiva
-    if not barreiraAtiva then
-        barreiraAtiva = criarBarreira()
-        notificar("BARRERA IMPENETRÁVEL ATIVADA", Color3.fromRGB(0, 0, 255))
-    else
-        if barreiraAtiva then
-            barreiraAtiva:Destroy()
-            barreiraAtiva = nil
-            notificar("BARRERA IMPENETRÁVEL DESATIVADA", Color3.fromRGB(255, 0, 0))
-        end
+-- Função para remover a barreira
+local function removeBarrier()
+    if barrier then
+        barrier:Destroy()
+        barrier = nil
+        healingEnabled = false
     end
-end)        
+end
+
+-- Criar o botão "Barreira Impenetrável" no painel
+createButton("Barreira Impenetrável", 50, function(active)
+    if active then
+        createBarrier()  -- Ativar a barreira
+    else
+        removeBarrier()  -- Desativar a barreira
+    end
+end)
 
 -- Voar (Corrigido)
 local flying = false
