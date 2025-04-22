@@ -1,7 +1,3 @@
--- Painel flutuante com botões ordenados e correções aplicadas no ESCUDO REFLETOR SUPREMO e Auto-Heal -- Tudo organizado e funcional
-
--- Interface principal local ScreenGui = Instance.new("ScreenGui") ScreenGui.Name = "PainelTop" ScreenGui.ResetOnSpawn = false ScreenGui.Parent = game:GetService("CoreGui")
-
 local FloatingButton = Instance.new("TextButton", ScreenGui) FloatingButton.Size = UDim2.new(0, 80, 0, 30) FloatingButton.Position = UDim2.new(0.9, 0, 0.1, 0) FloatingButton.Text = "SCRIPT" FloatingButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
 
 local Panel = Instance.new("Frame", ScreenGui) Panel.Size = UDim2.new(0, 200, 0, 400) Panel.Position = UDim2.new(0.75, 0, 0.1, 0) Panel.Visible = false Panel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -22,7 +18,6 @@ button.MouseButton1Click:Connect(function()
     button.BackgroundColor3 = active and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
     callback(active)
 end)
-
 end
 
 -- Anti-Tudo (completo restaurado) createButton("Anti-Tudo", 10, function(active) if active then local mt = getrawmetatable(game) setreadonly(mt, false) local oldNamecall = mt.__namecall mt.__namecall = newcclosure(function(self, ...) local method = getnamecallmethod() if method:lower() == "kick" then return nil end return oldNamecall(self, ...) end)
@@ -30,7 +25,7 @@ end
 for _, v in pairs(getconnections(game:GetService("Players").LocalPlayer.Idled)) do
         v:Disable()
     end
-
+    
     hookfunction(game.HttpPost, function(...) return nil end)
 
     game:GetService("CoreGui").ChildRemoved:Connect(function(child)
