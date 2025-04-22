@@ -115,79 +115,115 @@ createButton("Anti-Tudo", 10, function(active)
     end
 end)
 
--- GODMODE REAL + ANTI-MORTE
-local godModeAtivado = false
+-- MODO INTOCÁVEL SUPREMO
+local intocavelAtivado = false
+local connections = {}
 
-local function aplicarGodMode()
+local function protegerPersonagem()
     local player = game:GetService("Players").LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
-    local humanoid = character:WaitForChild("Humanoid")
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
 
-    humanoid.BreakJointsOnDeath = false
-
-    for _, conn in ipairs(getconnections(humanoid.HealthChanged)) do
-        conn:Disable()
+    -- Torna intocável fisicamente
+    for _, part in ipairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanTouch = false
+            part.CanQuery = false
+            part.Massless = true
+            part:SetNetworkOwnershipAuto()
+            -- Ignora física de ragdoll/push
+            part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0)
+        end
     end
 
-    humanoid.HealthChanged:Connect(function()
-        if godModeAtivado and humanoid.Health < humanoid.MaxHealth then
-            humanoid.Health = humanoid.MaxHealth
-        end
-    end)
+    -- Congela valores como Health, WalkSpeed e etc
+    if humanoid then
+        table.insert(connections, humanoid:GetPropertyChangedSignal("Health"):Connect(function()
+            if intocavelAtivado then humanoid.Health = humanoid.MaxHealth end
+        end))
+        table.insert(connections, humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+            if intocavelAtivado then humanoid.WalkSpeed = 16 end
+        end))
+        table.insert(connections, humanoid:GetPropertyChangedSignal("JumpPower"):Connect(function()
+            if intocavelAtivado then humanoid.JumpPower = 50 end
+        end))
+        humanoid.BreakJointsOnDeath = false
+        humanoid.PlatformStand = false
+    end
 
+    -- Apaga scripts maliciosos que grudarem
     for _, obj in ipairs(character:GetDescendants()) do
         if obj:IsA("Script") or obj:IsA("LocalScript") then
             pcall(function() obj:Destroy() end)
         end
     end
-
-    humanoid.PlatformStand = false
 end
 
--- Anti Remote Kill básico
-local function bloquearRemoteKills()
+local function bloquearAtaquesRemotos()
     local mt = getrawmetatable(game)
-    local oldNamecall = mt.__namecall
+    local old = mt.__namecall
     setreadonly(mt, false)
-
     mt.__namecall = newcclosure(function(self, ...)
         local args = {...}
         local method = getnamecallmethod()
 
-        -- Bloqueia eventos que envolvem morte, dano ou kick
-        if method == "FireServer" and typeof(self) == "Instance" then
-            local name = self.Name:lower()
-            if name:find("kill") or name:find("damage") or name:find("kick") then
-                warn("[⚠️] Tentativa de Remote Kill bloqueada:", self:GetFullName())
+        if intocavelAtivado and method == "FireServer" and typeof(self) == "Instance" then
+            local nome = self.Name:lower()
+            if nome:find("damage") or nome:find("hit") or nome:find("explosion") or nome:find("blast") or nome:find("attack") or nome:find("kill") or nome:find("stun") or nome:find("ragdoll") or nome:find("burn") or nome:find("push") then
+                warn("[⚠️] Remote de ataque bloqueado:", self:GetFullName())
                 return
             end
         end
 
-        return oldNamecall(self, unpack(args))
+        return old(self, unpack(args))
     end)
-
     setreadonly(mt, true)
 end
 
--- Botão Imortal
-createButton("Imortal", 60, function(active)
-    godModeAtivado = active
+local function ativarIntocavel()
+    protegerPersonagem()
+    bloquearAtaquesRemotos()
+end
+
+local function desativarIntocavel()
+    local player = game:GetService("Players").LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+
+    for _, part in ipairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanTouch = true
+            part.CanQuery = true
+            part.Massless = false
+            part.CustomPhysicalProperties = PhysicalProperties.new()
+        end
+    end
+
+    for _, conn in ipairs(connections) do
+        pcall(function() conn:Disconnect() end)
+    end
+    connections = {}
+end
+
+-- Botão Intocável Supremo
+createButton("Intocável", 60, function(active)
+    intocavelAtivado = active
     if active then
-        aplicarGodMode()
-        bloquearRemoteKills()
-        print("[🔰] Modo Imortal ativado com anti-remote!")
+        ativarIntocavel()
+        print("[🛡️] Modo Intocável SUPREMO ativado!")
     else
-        print("[🔰] Modo Imortal desativado!")
+        desativarIntocavel()
+        print("[🛡️] Modo Intocável desativado!")
     end
 end)
 
--- Reaplica ao morrer
+-- Reaplica ao renascer
 game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function()
     wait(1)
-    if godModeAtivado then
-        aplicarGodMode()
+    if intocavelAtivado then
+        ativarIntocavel()
     end
 end)
+
 -- Voar (Corrigido)
 local flying = false
 local speed = 60
