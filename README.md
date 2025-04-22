@@ -147,7 +147,7 @@ end
 end)
 
 --Barreira Impenetrável
--- Criação da barreira
+-- Função para criar a barreira ao redor do jogador
 local function criarBarreira()
     local player = game.Players.LocalPlayer
     local char = player.Character or player.CharacterAdded:Wait()
@@ -157,11 +157,11 @@ local function criarBarreira()
         return -- Não cria uma nova barreira se já existe
     end
 
-    -- Cria a barreira como uma esfera (visível para todos)
+    -- Cria a barreira ao redor do jogador
     local barrier = Instance.new("Part")
     barrier.Name = "Barreira"
     barrier.Shape = Enum.PartType.Ball
-    barrier.Size = Vector3.new(12, 12, 12) -- Aumentar o tamanho
+    barrier.Size = Vector3.new(12, 12, 12) -- Ajusta o tamanho da barreira
     barrier.Transparency = 0.5 -- Torna a barreira semi-transparente
     barrier.Material = Enum.Material.ForceField
     barrier.Color = Color3.fromRGB(0, 0, 255) -- Azul
@@ -169,7 +169,8 @@ local function criarBarreira()
     barrier.Anchored = false
     barrier.Massless = true
     barrier.Parent = char
-    barrier.CFrame = char.HumanoidRootPart.CFrame
+    -- Colocando a barreira no chão, em volta do jogador
+    barrier.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 0, 0) -- Ajusta a posição
 
     -- Conecta a barreira ao humanoide para seguir o jogador
     local weld = Instance.new("WeldConstraint")
@@ -191,22 +192,12 @@ local function criarBarreira()
         end
     end)
 
-    -- Função para curar a vida do jogador
-    local humanoid = char:WaitForChild("Humanoid")
-    humanoid.HealthChanged:Connect(function()
-        -- Se a vida do jogador for alterada (perdendo vida)
-        if humanoid.Health < humanoid.MaxHealth then
-            local missingHealth = humanoid.MaxHealth - humanoid.Health
-            humanoid.Health = humanoid.Health + missingHealth -- Completa a vida perdida
-        end
-    end)
-
     -- Retorna a barreira criada
     return barrier
 end
 
--- Ativar a barreira ao clicar no botão
-createButton("Barreira Impenetrável", 50, function(active)
+-- Ativar ou desativar a barreira ao clicar no botão
+createButton("Barreira Impenetrável", 110, function(active)
     local barrier
     if active then
         barrier = criarBarreira()  -- Criar a barreira
@@ -214,6 +205,7 @@ createButton("Barreira Impenetrável", 50, function(active)
         -- Destruir a barreira quando desativada
         if barrier then
             barrier:Destroy()
+            barrier = nil -- Limpar a referência para a barreira
         end
     end
 end)
