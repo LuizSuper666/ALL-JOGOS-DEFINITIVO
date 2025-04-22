@@ -1,6 +1,4 @@
--- Painel flutuante com botões ordenados e correções aplicadas no ESCUDO REFLETOR SUPREMO e Auto-Heal -- Tudo organizado e funcional
-
--- Interface principal
+--Interface principal
 local ScreenGui = Instance.new("ScreenGui") 
 ScreenGui.Name = "PainelTop"
 ScreenGui.ResetOnSpawn = false
@@ -118,33 +116,8 @@ createButton("Anti-Tudo", 10, function(active)
     end
 end)
 
--- Auto‑Heal (corrigido)
-local healActive   = false
-local healThread   = nil
-
-createButton("Auto-Heal", 60, function(active)
-    healActive = active
-
-    if healActive and not healThread then
-        healThread = task.spawn(function()
-            while healActive do
-                local hum = game.Players.LocalPlayer.Character and
-                            game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                if hum and hum.Health > 0 and hum.Health < hum.MaxHealth then
-                    hum.Health = math.min(hum.Health + 30, hum.MaxHealth)
-                end
-                task.wait(0.05)
-            end
-        end)
-    elseif not healActive and healThread then
-        -- Para a thread: setamos healActive=false; loop vai encerrar,
-        -- depois anulamos a referência
-        healThread = nil
-    end
-end)
-
 --Barreira Impenetrável
--local barrierVisible = false
+local barrierVisible = false
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 
@@ -198,15 +171,27 @@ character:WaitForChild("Humanoid").HealthChanged:Connect(function(health)
     end
 end)
 
+-- Garantir que a ScreenGui exista
+local function getScreenGui()
+    local screenGui = player.PlayerGui:FindFirstChild("ScreenGui")
+    if not screenGui then
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "ScreenGui"
+        screenGui.Parent = player.PlayerGui
+    end
+    return screenGui
+end
+
 -- Criando o botão para a "Barreira Impenetrável"
 local function createButton(name, position, callback)
+    local screenGui = getScreenGui()  -- Garantir que a ScreenGui exista
     local button = Instance.new("TextButton")
     button.Text = name
     button.Size = UDim2.new(0, 200, 0, 50)
     button.Position = UDim2.new(0, position, 0, 0)
     button.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
     button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.Parent = player.PlayerGui:WaitForChild("ScreenGui")  -- Cria o botão dentro da interface do jogador
+    button.Parent = screenGui  -- Cria o botão dentro da interface do jogador
 
     -- Função chamada quando o botão é pressionado
     button.MouseButton1Click:Connect(function()
@@ -222,6 +207,29 @@ createButton("Barreira Impenetrável", 160, function(active)
         createBarrier()  -- Ativa a barreira
     else
         deactivateBarrier()  -- Desativa a barreira
+    end
+end)-- Auto‑Heal (corrigido)
+local healActive   = false
+local healThread   = nil
+
+createButton("Auto-Heal", 60, function(active)
+    healActive = active
+
+    if healActive and not healThread then
+        healThread = task.spawn(function()
+            while healActive do
+                local hum = game.Players.LocalPlayer.Character and
+                            game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if hum and hum.Health > 0 and hum.Health < hum.MaxHealth then
+                    hum.Health = math.min(hum.Health + 30, hum.MaxHealth)
+                end
+                task.wait(0.05)
+            end
+        end)
+    elseif not healActive and healThread then
+        -- Para a thread: setamos healActive=false; loop vai encerrar,
+        -- depois anulamos a referência
+        healThread = nil
     end
 end)
 
