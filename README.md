@@ -17,6 +17,31 @@ local Panel = Instance.new("Frame")
 Panel.Size = UDim2.new(0, 180, 0, 280)
 Panel.Position = UDim2.new(0.75, 0, 0.1, 0)
 Panel.Visible = false
+-- Auto‑Heal (corrigido)
+local healActive   = false
+local healThread   = nil
+
+createButton("Auto-Heal", 60, function(active)
+healActive = active
+
+if healActive and not healThread then  
+    healThread = task.spawn(function()  
+        while healActive do  
+            local hum = game.Players.LocalPlayer.Character and  
+                        game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")  
+            if hum and hum.Health > 0 and hum.Health < hum.MaxHealth then  
+                hum.Health = math.min(hum.Health + 100, hum.MaxHealth)  
+            end  
+            task.wait(0.05)  
+        end  
+    end)  
+elseif not healActive and healThread then  
+    -- Para a thread: setamos healActive=false; loop vai encerrar,  
+    -- depois anulamos a referência  
+    healThread = nil  
+end
+
+end)
 Panel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 Panel.Parent = ScreenGui
 
@@ -41,7 +66,69 @@ Panel.Visible = not Panel.Visible
 end)
 
 CloseButton.MouseButton1Click:Connect(function()
-Panel.Visible = false
+Panel.Visible = false--Barreira Impenetrável
+-- Função para criar a barreira ao redor do jogador
+local function criarBarreira()
+    local player = game.Players.LocalPlayer
+    local char = player.Character or player.CharacterAdded:Wait()
+
+    -- Verifica se já existe uma barreira para o jogador
+    if char:FindFirstChild("Barreira") then
+        return -- Não cria uma nova barreira se já existe
+    end
+
+    -- Cria a barreira ao redor do jogador
+    local barrier = Instance.new("Part")
+    barrier.Name = "Barreira"
+    barrier.Shape = Enum.PartType.Ball
+    barrier.Size = Vector3.new(24, 24, 24) -- Ajusta o tamanho da barreira
+    barrier.Transparency = 0.5 -- Torna a barreira semi-transparente
+    barrier.Material = Enum.Material.ForceField
+    barrier.Color = Color3.fromRGB(0, 0, 255) -- Azul
+    barrier.CanCollide = true -- Permitindo colisão
+    barrier.Anchored = false
+    barrier.Massless = true
+    barrier.Parent = char
+    -- Colocando a barreira no chão, em volta do jogador
+    barrier.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 0, 0) -- Ajusta a posição
+
+    -- Conecta a barreira ao humanoide para seguir o jogador
+    local weld = Instance.new("WeldConstraint")
+    weld.Part0 = barrier
+    weld.Part1 = char.HumanoidRootPart
+    weld.Parent = barrier
+
+    -- Evento para impedir que qualquer coisa entre em contato com a barreira
+    barrier.Touched:Connect(function(hit)
+        local hitParent = hit.Parent
+        if hitParent and hitParent:IsA("Model") then
+            local humanoid = hitParent:FindFirstChild("Humanoid")
+            if humanoid and hitParent ~= char then
+                -- Destruir qualquer objeto ou projétil que toque a barreira
+                if hit:IsA("Part") then
+                    hit:Destroy() -- Excluir qualquer parte que tente atravessar
+                end
+            end
+        end
+    end)
+
+    -- Retorna a barreira criada
+    return barrier
+end
+
+-- Ativar ou desativar a barreira ao clicar no botão
+createButton("Barreira Impenetrável", 110, function(active)
+    local barrier
+    if active then
+        barrier = criarBarreira()  -- Criar a barreira
+    else
+        -- Destruir a barreira quando desativada
+        if barrier then
+            barrier:Destroy()
+            barrier = nil -- Limpar a referência para a barreira
+        end
+    end
+end)
 end)
 
 -- Criador de botões
@@ -120,93 +207,83 @@ end
 
 end)
 
--- Auto‑Heal (corrigido)
-local healActive   = false
-local healThread   = nil
+-- Auto‑Heal (corrigido de verdade)
+local healActive = false
+local healThread = nil
 
 createButton("Auto-Heal", 60, function(active)
-healActive = active
+    healActive = active
 
-if healActive and not healThread then  
-    healThread = task.spawn(function()  
-        while healActive do  
-            local hum = game.Players.LocalPlayer.Character and  
-                        game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")  
-            if hum and hum.Health > 0 and hum.Health < hum.MaxHealth then  
-                hum.Health = math.min(hum.Health + 100, hum.MaxHealth)  
+    if healActive and not healThread then  
+        healThread = task.spawn(function()  
+            while healActive do  
+                local char = game.Players.LocalPlayer.Character
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                if hum and hum.Health > 0 and hum.Health < hum.MaxHealth then  
+                    hum.Health = math.min(hum.Health + 100, hum.MaxHealth)  
+                end  
+                task.wait(0.05)  
             end  
-            task.wait(0.05)  
-        end  
-    end)  
-elseif not healActive and healThread then  
-    -- Para a thread: setamos healActive=false; loop vai encerrar,  
-    -- depois anulamos a referência  
-    healThread = nil  
-end
-
+            healThread = nil -- Limpa quando sair do loop
+        end)  
+    elseif not healActive and healThread then  
+        -- Apenas desliga: o loop lá dentro vai perceber e parar
+        -- A thread será limpa quando sair do loop
+    end
 end)
 
---Barreira Impenetrável
--- Função para criar a barreira ao redor do jogador
-local function criarBarreira()
-    local player = game.Players.LocalPlayer
-    local char = player.Character or player.CharacterAdded:Wait()
+-- Refletor de Dano
+local refletorAtivo = false
+local ultimoDano = 0
 
-    -- Verifica se já existe uma barreira para o jogador
-    if char:FindFirstChild("Barreira") then
-        return -- Não cria uma nova barreira se já existe
+-- Função para encontrar o jogador mais próximo
+local function jogadorMaisProximo()
+    local players = game.Players:GetPlayers()
+    local localPlayer = game.Players.LocalPlayer
+    local char = localPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+
+    local menorDistancia = math.huge
+    local maisProximo = nil
+
+    for _, player in pairs(players) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local distancia = (char.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+            if distancia < menorDistancia then
+                menorDistancia = distancia
+                maisProximo = player
+            end
+        end
     end
 
-    -- Cria a barreira ao redor do jogador
-    local barrier = Instance.new("Part")
-    barrier.Name = "Barreira"
-    barrier.Shape = Enum.PartType.Ball
-    barrier.Size = Vector3.new(24, 24, 24) -- Ajusta o tamanho da barreira
-    barrier.Transparency = 0.5 -- Torna a barreira semi-transparente
-    barrier.Material = Enum.Material.ForceField
-    barrier.Color = Color3.fromRGB(0, 0, 255) -- Azul
-    barrier.CanCollide = true -- Permitindo colisão
-    barrier.Anchored = false
-    barrier.Massless = true
-    barrier.Parent = char
-    -- Colocando a barreira no chão, em volta do jogador
-    barrier.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 0, 0) -- Ajusta a posição
+    return maisProximo
+end
 
-    -- Conecta a barreira ao humanoide para seguir o jogador
-    local weld = Instance.new("WeldConstraint")
-    weld.Part0 = barrier
-    weld.Part1 = char.HumanoidRootPart
-    weld.Parent = barrier
+-- Detectar dano recebido
+local function monitorarDano()
+    local player = game.Players.LocalPlayer
+    local char = player.Character or player.CharacterAdded:Wait()
+    local humanoid = char:WaitForChild("Humanoid")
 
-    -- Evento para impedir que qualquer coisa entre em contato com a barreira
-    barrier.Touched:Connect(function(hit)
-        local hitParent = hit.Parent
-        if hitParent and hitParent:IsA("Model") then
-            local humanoid = hitParent:FindFirstChild("Humanoid")
-            if humanoid and hitParent ~= char then
-                -- Destruir qualquer objeto ou projétil que toque a barreira
-                if hit:IsA("Part") then
-                    hit:Destroy() -- Excluir qualquer parte que tente atravessar
+    humanoid.HealthChanged:Connect(function(novaVida)
+        if refletorAtivo then
+            local dano = ultimoDano - novaVida
+            if dano > 0 then
+                local alvo = jogadorMaisProximo()
+                if alvo and alvo.Character and alvo.Character:FindFirstChild("Humanoid") then
+                    alvo.Character.Humanoid:TakeDamage(dano)
                 end
             end
         end
+        ultimoDano = novaVida
     end)
-
-    -- Retorna a barreira criada
-    return barrier
 end
 
--- Ativar ou desativar a barreira ao clicar no botão
-createButton("Barreira Impenetrável", 110, function(active)
-    local barrier
+-- Criar botão Refletor
+createButton("Refletor", 110, function(active)
+    refletorAtivo = active
     if active then
-        barrier = criarBarreira()  -- Criar a barreira
-    else
-        -- Destruir a barreira quando desativada
-        if barrier then
-            barrier:Destroy()
-            barrier = nil -- Limpar a referência para a barreira
-        end
+        monitorarDano()
     end
 end)
 
@@ -404,4 +481,3 @@ if alvo then
 root.CFrame = alvo.CFrame + Vector3.new(2, 0, 2)
 end
 end)
-
