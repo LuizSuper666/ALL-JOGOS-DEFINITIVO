@@ -1,23 +1,62 @@
-local FloatingButton = Instance.new("TextButton", ScreenGui) FloatingButton.Size = UDim2.new(0, 80, 0, 30) FloatingButton.Position = UDim2.new(0.9, 0, 0.1, 0) FloatingButton.Text = "SCRIPT" FloatingButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
+-- Painel flutuante com botões ordenados e correções aplicadas no ESCUDO REFLETOR SUPREMO e Auto-Heal -- Tudo organizado e funcional
 
-local Panel = Instance.new("Frame", ScreenGui) Panel.Size = UDim2.new(0, 200, 0, 400) Panel.Position = UDim2.new(0.75, 0, 0.1, 0) Panel.Visible = false Panel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+-- Interface principal
+local ScreenGui = Instance.new("ScreenGui") 
+ScreenGui.Name = "PainelTop"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game:GetService("CoreGui")
 
-local ScrollingFrame = Instance.new("ScrollingFrame", Panel) ScrollingFrame.Size = UDim2.new(1, 0, 1, 0) ScrollingFrame.CanvasSize = UDim2.new(0, 0, 10, 0) ScrollingFrame.ScrollBarThickness = 5
+local FloatingButton = Instance.new("TextButton")
+FloatingButton.Size = UDim2.new(0, 80, 0, 30)
+FloatingButton.Position = UDim2.new(0.9, 0, 0.1, 0)
+FloatingButton.Text = "SCRIPT"
+FloatingButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
+FloatingButton.Parent = ScreenGui
 
-local CloseButton = Instance.new("TextButton", Panel) CloseButton.Size = UDim2.new(0, 30, 0, 30) CloseButton.Position = UDim2.new(1, -30, 0, 0) CloseButton.Text = "X" CloseButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+local Panel = Instance.new("Frame")
+Panel.Size = UDim2.new(0, 200, 0, 400)
+Panel.Position = UDim2.new(0.75, 0, 0.1, 0)
+Panel.Visible = false
+Panel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Panel.Parent = ScreenGui
 
-FloatingButton.MouseButton1Click:Connect(function() Panel.Visible = not Panel.Visible end)
+local ScrollingFrame = Instance.new("ScrollingFrame")
+ScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 10, 0)
+ScrollingFrame.ScrollBarThickness = 5
+ScrollingFrame.Parent = Panel
 
-CloseButton.MouseButton1Click:Connect(function() Panel.Visible = false end)
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -30, 0, 0)
+CloseButton.Text = "X"
+CloseButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+CloseButton.Parent = Panel
 
--- Criador de botões local function createButton(name, y, callback) local button = Instance.new("TextButton", ScrollingFrame) button.Size = UDim2.new(0, 180, 0, 40) button.Position = UDim2.new(0, 10, 0, y) button.Text = name button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-
-local active = false
-button.MouseButton1Click:Connect(function()
-    active = not active
-    button.BackgroundColor3 = active and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-    callback(active)
+-- Abrir/Fechar painel
+FloatingButton.MouseButton1Click:Connect(function()
+    Panel.Visible = not Panel.Visible
 end)
+
+CloseButton.MouseButton1Click:Connect(function()
+    Panel.Visible = false
+end)
+
+-- Criador de botões
+local function createButton(name, y, callback)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, 180, 0, 40)
+    button.Position = UDim2.new(0, 10, 0, y)
+    button.Text = name
+    button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    button.Parent = ScrollingFrame
+
+    local active = false
+    button.MouseButton1Click:Connect(function()
+        active = not active
+        button.BackgroundColor3 = active and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        callback(active)
+    end)
 end
 
 -- Anti-Tudo (completo restaurado) createButton("Anti-Tudo", 10, function(active) if active then local mt = getrawmetatable(game) setreadonly(mt, false) local oldNamecall = mt.__namecall mt.__namecall = newcclosure(function(self, ...) local method = getnamecallmethod() if method:lower() == "kick" then return nil end return oldNamecall(self, ...) end)
@@ -25,7 +64,7 @@ end
 for _, v in pairs(getconnections(game:GetService("Players").LocalPlayer.Idled)) do
         v:Disable()
     end
-    
+
     hookfunction(game.HttpPost, function(...) return nil end)
 
     game:GetService("CoreGui").ChildRemoved:Connect(function(child)
