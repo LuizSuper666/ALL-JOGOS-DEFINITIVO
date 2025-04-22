@@ -146,106 +146,87 @@ end
 
 end)
 
---Escudo Refletor Supremo + escudo visual
-createButton("Escudo Refletor", 110, function(active)
-if not active then return end
+--Barreira Impenetrável
+createButton("Barreira Impenetrável", 120, function(active)
+    if not active then return end
 
-local player = game.Players.LocalPlayer  
-local humanoid = player.Character and player.Character:WaitForChild("Humanoid")  
+    local player = game.Players.LocalPlayer
+    local humanoid = player.Character and player.Character:WaitForChild("Humanoid")
 
-local function notificar(msg, cor)  
-    local gui = Instance.new("ScreenGui", game.CoreGui)  
-    local lbl = Instance.new("TextLabel", gui)  
-    lbl.Size = UDim2.new(0, 500, 0, 40)  
-    lbl.Position = UDim2.new(0.5, -250, 0.05, 0)  
-    lbl.Text = msg  
-    lbl.TextColor3 = cor or Color3.fromRGB(255, 255, 0)  
-    lbl.BackgroundTransparency = 1  
-    lbl.TextScaled = true  
-    wait(2)  
-    gui:Destroy()  
-end  
+    local function notificar(msg, cor)
+        local gui = Instance.new("ScreenGui", game.CoreGui)
+        local lbl = Instance.new("TextLabel", gui)
+        lbl.Size = UDim2.new(0, 500, 0, 40)
+        lbl.Position = UDim2.new(0.5, -250, 0.05, 0)
+        lbl.Text = msg
+        lbl.TextColor3 = cor or Color3.fromRGB(255, 255, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.TextScaled = true
+        wait(2)
+        gui:Destroy()
+    end
 
-local function refletir(alvo, dano)  
-    if alvo and alvo.Character and alvo.Character:FindFirstChild("Humanoid") then  
-        alvo.Character.Humanoid:TakeDamage(dano or 100)  
-        notificar("REFLETIDO!", Color3.fromRGB(255, 0, 0))  
-    end  
-end  
+    local function criarBarreira()
+        local char = player.Character
+        if not char then return end
 
-local blocked = {"kick","ban","kill","jail","explode","reset"}  
+        -- Cria a barreira semi-transparente
+        local barreira = Instance.new("Part")
+        barreira.Name = "Barreira"
+        barreira.Shape = Enum.PartType.Ball
+        barreira.Size = Vector3.new(20, 20, 20)
+        barreira.Transparency = 0.5
+        barreira.Material = Enum.Material.SmoothPlastic
+        barreira.Color = Color3.fromRGB(0, 0, 255)
+        barreira.CanCollide = true
+        barreira.Anchored = false  -- Para que a barreira siga o jogador
+        barreira.Parent = char
+        barreira.CFrame = char.HumanoidRootPart.CFrame
 
-local mt = getrawmetatable(game)  
-setreadonly(mt, false)  
-local old = mt.__namecall  
-mt.__namecall = newcclosure(function(self, ...)  
-    local args = {...}  
-    local method = getnamecallmethod()  
+        -- Criar a barreira ao redor do jogador e mover com ele
+        local weld = Instance.new("WeldConstraint", barreira)
+        weld.Part0 = barreira
+        weld.Part1 = char.HumanoidRootPart
 
-    if method:lower():find("server") then  
-        for _, word in ipairs(blocked) do  
-            if self.Name:lower():find(word) then  
-                for _, v in pairs(args) do  
-                    if typeof(v) == "Instance" and v:IsA("Player") and v ~= player then  
-                        refletir(v, 100)  
-                    end  
-                end  
-                notificar("ATAQUE BLOQUEADO: " .. word:upper())  
-                return nil  
-            end  
-        end  
-    end  
+        -- Bloquear interações externas
+        local function bloquearInteracoes()
+            for _, obj in pairs(workspace:GetChildren()) do
+                if obj:IsA("Part") and obj.Parent and obj.Parent:IsA("Player") and obj.Parent ~= player then
+                    -- Se outro jogador ou objeto tentar tocar o jogador, destruir o objeto
+                    if barreira and barreira:IsPointInRegion(obj.Position) then
+                        obj:Destroy()  -- Destruir projéteis ou partes externas
+                    end
+                end
+            end
+        end
 
-    for _, arg in ipairs(args) do  
-        if typeof(arg) == "string" then  
-            for _, word in ipairs(blocked) do  
-                if arg:lower():find(word) then  
-                    notificar("COMANDO BLOQUEADO: " .. word:upper())  
-                    for _, v in pairs(args) do  
-                        if typeof(v) == "Instance" and v:IsA("Player") and v ~= player then  
-                            refletir(v, 100)  
-                        end  
-                    end  
-                    return nil  
-                end  
-            end  
-        end  
-    end  
+        -- Conectar a função que bloqueia interações
+        game:GetService("RunService").Heartbeat:Connect(bloquearInteracoes)
 
-    return old(self, ...)  
-end)  
-setreadonly(mt, true)  
+        -- Regenerar vida quando a barreira for ativada
+        local vidaPerdida = humanoid.Health
+        humanoid.HealthChanged:Connect(function()
+            if humanoid.Health < vidaPerdida then
+                humanoid.Health = vidaPerdida
+                notificar("VIDA RESTAURADA!", Color3.fromRGB(0, 255, 0))
+            end
+        end)
 
-humanoid:GetPropertyChangedSignal("Health"):Connect(function()  
-if humanoid.Health <= humanoid.MaxHealth * 0.99 then  
-    humanoid.Health = humanoid.MaxHealth  
-    notificar("DANO PREVISTO BLOQUEADO", Color3.fromRGB(255, 0, 0))  
-end
+        return barreira
+    end
 
-end)  -- fecha só uma vez
-
--- Escudo visual com proteção física  
-local char = player.Character  
-if char and not char:FindFirstChild("Escudo") then  
-    local escudo = Instance.new("Part")  
-    escudo.Name = "Escudo"  
-    escudo.Shape = Enum.PartType.Ball  
-    escudo.Size = Vector3.new(8, 8, 8)  
-    escudo.Transparency = 0.6  
-    escudo.Material = Enum.Material.ForceField  
-    escudo.Color = Color3.fromRGB(0, 255, 255)  
-    escudo.CanCollide = false  
-    escudo.Anchored = false  
-    escudo.Massless = true  
-    escudo.Parent = char  
-    escudo.CFrame = char.HumanoidRootPart.CFrame  
-
-    local weld = Instance.new("WeldConstraint", escudo)  
-    weld.Part0 = escudo  
-    weld.Part1 = char.HumanoidRootPart  
- end
-
-end)
+    -- Ação de ativar/desativar
+    local barreiraAtiva
+    if not barreiraAtiva then
+        barreiraAtiva = criarBarreira()
+        notificar("BARRERA IMPENETRÁVEL ATIVADA", Color3.fromRGB(0, 0, 255))
+    else
+        if barreiraAtiva then
+            barreiraAtiva:Destroy()
+            barreiraAtiva = nil
+            notificar("BARRERA IMPENETRÁVEL DESATIVADA", Color3.fromRGB(255, 0, 0))
+        end
+    end
 end)
 
 -- Voar (Corrigido)
