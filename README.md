@@ -143,104 +143,87 @@ createButton("Auto-Heal", 60, function(active)
     end
 end)
 
---Escudo Refletor Supremo + escudo visual
-createButton("Escudo Refletor", 110, function(active)
-    if not active then return end
+--Barreira Impenetrável
+-local barrierVisible = false
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
 
-    local player = game.Players.LocalPlayer
-    local humanoid = player.Character and player.Character:WaitForChild("Humanoid")
+-- Criando a barreira azul semi-transparente
+local barrier
+local function createBarrier()
+    if barrierVisible then return end  -- Verifica se a barreira já existe
 
-    local function notificar(msg, cor)
-        local gui = Instance.new("ScreenGui", game.CoreGui)
-        local lbl = Instance.new("TextLabel", gui)
-        lbl.Size = UDim2.new(0, 500, 0, 40)
-        lbl.Position = UDim2.new(0.5, -250, 0.05, 0)
-        lbl.Text = msg
-        lbl.TextColor3 = cor or Color3.fromRGB(255, 255, 0)
-        lbl.BackgroundTransparency = 1
-        lbl.TextScaled = true
-        wait(2)
-        gui:Destroy()
-    end
+    -- Cria a barreira ao redor do personagem
+    barrier = Instance.new("Part")
+    barrier.Size = character.HumanoidRootPart.Size * 2  -- Ajusta o tamanho para cobrir o corpo inteiro
+    barrier.Position = character.HumanoidRootPart.Position
+    barrier.Anchored = true
+    barrier.CanCollide = false
+    barrier.Transparency = 0.5  -- Tornando a barreira semi-transparente
+    barrier.BrickColor = BrickColor.new("Bright blue")
+    barrier.Parent = workspace
+    barrierVisible = true
 
-    local function refletir(alvo, dano)
-        if alvo and alvo.Character and alvo.Character:FindFirstChild("Humanoid") then
-            alvo.Character.Humanoid:TakeDamage(dano or 100)
-            notificar("REFLETIDO!", Color3.fromRGB(255, 0, 0))
+    -- A barreira segue o personagem
+    game:GetService("RunService").Heartbeat:Connect(function()
+        if barrierVisible then
+            barrier.Position = character.HumanoidRootPart.Position
         end
-    end
-
-    local blocked = {"kick","ban","kill","jail","explode","reset"}
-
-    local mt = getrawmetatable(game)
-    setreadonly(mt, false)
-    local old = mt.__namecall
-    mt.__namecall = newcclosure(function(self, ...)
-        local args = {...}
-        local method = getnamecallmethod()
-
-        if method:lower():find("server") then
-            for _, word in ipairs(blocked) do
-                if self.Name:lower():find(word) then
-                    for _, v in pairs(args) do
-                        if typeof(v) == "Instance" and v:IsA("Player") and v ~= player then
-                            refletir(v, 100)
-                        end
-                    end
-                    notificar("ATAQUE BLOQUEADO: " .. word:upper())
-                    return nil
-                end
-            end
-        end
-
-        for _, arg in ipairs(args) do
-            if typeof(arg) == "string" then
-                for _, word in ipairs(blocked) do
-                    if arg:lower():find(word) then
-                        notificar("COMANDO BLOQUEADO: " .. word:upper())
-                        for _, v in pairs(args) do
-                            if typeof(v) == "Instance" and v:IsA("Player") and v ~= player then
-                                refletir(v, 100)
-                            end
-                        end
-                        return nil
-                    end
-                end
-            end
-        end
-
-        return old(self, ...)
     end)
-    setreadonly(mt, true)
+end
 
-    humanoid:GetPropertyChangedSignal("Health"):Connect(function()
-    if humanoid.Health <= humanoid.MaxHealth * 0.99 then
-        humanoid.Health = humanoid.MaxHealth
-        notificar("DANO PREVISTO BLOQUEADO", Color3.fromRGB(255, 0, 0))
+-- Desativando a barreira
+local function deactivateBarrier()
+    if barrierVisible then
+        barrier:Destroy()
+        barrierVisible = false
     end
-end)  -- fecha só uma vez
+end
 
-    -- Escudo visual com proteção física
-    local char = player.Character
-    if char and not char:FindFirstChild("Escudo") then
-        local escudo = Instance.new("Part")
-        escudo.Name = "Escudo"
-        escudo.Shape = Enum.PartType.Ball
-        escudo.Size = Vector3.new(8, 8, 8)
-        escudo.Transparency = 0.6
-        escudo.Material = Enum.Material.ForceField
-        escudo.Color = Color3.fromRGB(0, 255, 255)
-        escudo.CanCollide = false
-        escudo.Anchored = false
-        escudo.Massless = true
-        escudo.Parent = char
-        escudo.CFrame = char.HumanoidRootPart.CFrame
+-- Função para regenerar a vida do personagem até o máximo
+local function restoreHealth()
+    local humanoid = character:WaitForChild("Humanoid")
+    local currentHealth = humanoid.Health
+    local maxHealth = humanoid.MaxHealth
+    local healthToRestore = maxHealth - currentHealth
 
-        local weld = Instance.new("WeldConstraint", escudo)
-        weld.Part0 = escudo
-        weld.Part1 = char.HumanoidRootPart
-     end
- end)
+    -- Regenera instantaneamente a vida necessária para chegar ao máximo
+    humanoid.Health = humanoid.Health + healthToRestore
+end
+
+-- Evento para detectar perda de vida e restaurar automaticamente até o máximo
+character:WaitForChild("Humanoid").HealthChanged:Connect(function(health)
+    if health < character.Humanoid.Health then
+        restoreHealth()
+    end
+end)
+
+-- Criando o botão para a "Barreira Impenetrável"
+local function createButton(name, position, callback)
+    local button = Instance.new("TextButton")
+    button.Text = name
+    button.Size = UDim2.new(0, 200, 0, 50)
+    button.Position = UDim2.new(0, position, 0, 0)
+    button.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Parent = player.PlayerGui:WaitForChild("ScreenGui")  -- Cria o botão dentro da interface do jogador
+
+    -- Função chamada quando o botão é pressionado
+    button.MouseButton1Click:Connect(function()
+        -- Alterna o estado da barreira
+        barrierVisible = not barrierVisible
+        callback(barrierVisible)
+    end)
+end
+
+-- Função que será chamada quando o botão for pressionado
+createButton("Barreira Impenetrável", 160, function(active)
+    if active then
+        createBarrier()  -- Ativa a barreira
+    else
+        deactivateBarrier()  -- Desativa a barreira
+    end
+end)
 
 -- Voar (Corrigido)
 local flying = false
