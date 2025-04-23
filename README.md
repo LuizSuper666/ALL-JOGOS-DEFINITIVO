@@ -82,18 +82,26 @@ for _, v in pairs(getconnections(game:GetService("Players").LocalPlayer.Idled)) 
         end  
     end)  
 
-    local function showMessage(message)  
-        local screenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))  
-        local textLabel = Instance.new("TextLabel", screenGui)  
-        textLabel.Size = UDim2.new(0, 400, 0, 100)  
-        textLabel.Position = UDim2.new(0.5, -200, 0, 10)  
-        textLabel.Text = message  
-        textLabel.TextColor3 = Color3.fromRGB(255, 0, 0)  
-        textLabel.TextSize = 30  
-        textLabel.BackgroundTransparency = 1  
-        wait(2)  
-        screenGui:Destroy()  
-    end  
+    local function showMessage(message)
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Parent = game:GetService("CoreGui")
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(0, 400, 0, 100)
+    textLabel.Position = UDim2.new(0.5, -200, 0, 10)
+    textLabel.Text = message
+    textLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+    textLabel.TextSize = 30
+    textLabel.BackgroundTransparency = 1
+    textLabel.Parent = screenGui
+
+    task.delay(2, function()
+        screenGui:Destroy()
+    end)
+end
+
+-- Exemplo de uso:
+-- showMessage("Alerta: Algo aconteceu!")
 
     local function blockAllReports()  
         local ReplicatedStorage = game:GetService("ReplicatedStorage")  
@@ -116,84 +124,82 @@ end
 
 end)
 
--- Auto‑Heal (corrigido de verdade)
-local healActive = false
-local healThread = nil
+--Desvio Automático
 
-createButton("Auto-Heal", 60, function(active)
-    healActive = active
+local desvioAtivo = false local desvioThread = nil local ultimaDirecao = false -- false = esquerda, true = direita
+createButton("Desvio Auto", 60, function(active) desvioAtivo = active
 
-    if healActive and not healThread then  
-        healThread = task.spawn(function()  
-            while healActive do  
-                local char = game.Players.LocalPlayer.Character
-                local hum = char and char:FindFirstChildOfClass("Humanoid")
-                if hum and hum.Health > 0 and hum.Health < hum.MaxHealth then  
-                    hum.Health = math.min(hum.Health + 100, hum.MaxHealth)  
-                end  
-                task.wait(0.05)  
-            end  
-            healThread = nil -- Limpa quando sair do loop
-        end)  
-    elseif not healActive and healThread then  
-        -- Apenas desliga: o loop lá dentro vai perceber e parar
-        -- A thread será limpa quando sair do loop
-    end
-end)
+if active and not desvioThread then
+    desvioThread = task.spawn(function()
+        local player = game.Players.LocalPlayer
+        while desvioAtivo do
+            local char = player.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if not hrp then task.wait() continue end
 
--- Refletor de Dano
-local refletorAtivo = false
-local ultimoDano = 0
-
--- Função para encontrar o jogador mais próximo
-local function jogadorMaisProximo()
-    local players = game.Players:GetPlayers()
-    local localPlayer = game.Players.LocalPlayer
-    local char = localPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-
-    local menorDistancia = math.huge
-    local maisProximo = nil
-
-    for _, player in pairs(players) do
-        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local distancia = (char.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-            if distancia < menorDistancia then
-                menorDistancia = distancia
-                maisProximo = player
-            end
-        end
-    end
-
-    return maisProximo
-end
-
--- Detectar dano recebido
-local function monitorarDano()
-    local player = game.Players.LocalPlayer
-    local char = player.Character or player.CharacterAdded:Wait()
-    local humanoid = char:WaitForChild("Humanoid")
-
-    humanoid.HealthChanged:Connect(function(novaVida)
-        if refletorAtivo then
-            local dano = ultimoDano - novaVida
-            if dano > 0 then
-                local alvo = jogadorMaisProximo()
-                if alvo and alvo.Character and alvo.Character:FindFirstChild("Humanoid") then
-                    alvo.Character.Humanoid:TakeDamage(dano)
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("BasePart") and obj.Velocity.Magnitude > 50 and (obj.Position - hrp.Position).Magnitude < 25 then
+                    local direcao = (obj.Position - hrp.Position).Unit
+                    local angulo = hrp.CFrame.LookVector:Dot(direcao)
+                    if angulo < -0.2 then -- Vindo na direção do player
+                        local offset = ultimaDirecao and 5 or -5
+                        hrp.CFrame = hrp.CFrame * CFrame.new(offset, 0, 0)
+                        ultimaDirecao = not ultimaDirecao
+                        break
+                    end
                 end
             end
+            task.wait(0.05)
         end
-        ultimoDano = novaVida
+        desvioThread = nil
     end)
 end
 
--- Criar botão Refletor
-createButton("Refletor", 110, function(active)
-    refletorAtivo = active
-    if active then
-        monitorarDano()
-    end
+end)
+
+--Prever Movimento
+
+local predAtivo = false local predThread = nil
+createButton("Predição Curva", 110, function(active) predAtivo = active
+
+if active and not predThread then
+    predThread = task.spawn(function()
+        local player = game.Players.LocalPlayer
+        while predAtivo do
+            for _, plr in pairs(game.Players:GetPlayers()) do
+                if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = plr.Character.HumanoidRootPart
+                    local vel = hrp.Velocity
+                    local basePos = hrp.Position
+
+                    for i, tempo in ipairs({0.5, 1, 1.5, 2}) do
+                        local ponto = basePos + vel * tempo
+                        local tag = "PredPoint_" .. plr.Name .. "_" .. tostring(tempo)
+
+                        local marcador = workspace:FindFirstChild(tag) or Instance.new("Part")
+                        marcador.Name = tag
+                        marcador.Size = Vector3.new(0.5, 0.5, 0.5)
+                        marcador.Anchored = true
+                        marcador.CanCollide = false
+                        marcador.Transparency = 0.25
+                        marcador.Material = Enum.Material.Neon
+                        marcador.Color = Color3.fromHSV(tempo / 2, 1, 1)
+                        marcador.Position = ponto + Vector3.new(0, 2 + (i * 0.3), 0)
+                        marcador.Parent = workspace
+                    end
+                end
+            end
+            task.wait(0.2)
+        end
+        for _, obj in pairs(workspace:GetChildren()) do
+            if obj.Name:match("PredPoint_") then
+                obj:Destroy()
+            end
+        end
+        predThread = nil
+    end)
+end
+
 end)
 
 -- Voar (Corrigido)
