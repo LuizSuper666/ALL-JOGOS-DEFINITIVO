@@ -124,80 +124,76 @@ end
 
 end)
 
---Desvio Automático
+---- Desvio Automático 
+createButton("Desvio Projétil", 60, function(active) local RunService = game:GetService("RunService") local player = game.Players.LocalPlayer local char = player.Character or player.CharacterAdded:Wait() local humanoidRootPart = char:WaitForChild("HumanoidRootPart") local moveLeft = true local conn
 
-local desvioAtivo = false local desvioThread = nil local ultimaDirecao = false -- false = esquerda, true = direita
-createButton("Desvio Auto", 60, function(active) desvioAtivo = active
-
-if active and not desvioThread then
-    desvioThread = task.spawn(function()
-        local player = game.Players.LocalPlayer
-        while desvioAtivo do
-            local char = player.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if not hrp then task.wait() continue end
-
-            for _, obj in pairs(workspace:GetDescendants()) do
-                if obj:IsA("BasePart") and obj.Velocity.Magnitude > 50 and (obj.Position - hrp.Position).Magnitude < 25 then
-                    local direcao = (obj.Position - hrp.Position).Unit
-                    local angulo = hrp.CFrame.LookVector:Dot(direcao)
-                    if angulo < -0.2 then -- Vindo na direção do player
-                        local offset = ultimaDirecao and 5 or -5
-                        hrp.CFrame = hrp.CFrame * CFrame.new(offset, 0, 0)
-                        ultimaDirecao = not ultimaDirecao
-                        break
-                    end
-                end
-            end
-            task.wait(0.05)
-        end
-        desvioThread = nil
-    end)
+if active then
+	conn = RunService.Heartbeat:Connect(function()
+		for _, obj in pairs(workspace:GetDescendants()) do
+			if obj:IsA("BasePart") and obj.Velocity.Magnitude > 100 and obj.Position:FuzzyEq(humanoidRootPart.Position, 10) == false then
+				local dir = moveLeft and Vector3.new(-5, 0, 0) or Vector3.new(5, 0, 0)
+				humanoidRootPart.CFrame = humanoidRootPart.CFrame + dir
+				moveLeft = not moveLeft
+				break
+			end
+		end
+	end)
+else
+	if conn then conn:Disconnect() end
 end
 
 end)
 
---Prever Movimento
+-- Botão 2: Predição Adaptável
+createButton("Predição Adaptável", 110, function(active) local RunService = game:GetService("RunService") local player = game.Players.LocalPlayer local camera = workspace.CurrentCamera local points = {} local lastPos = nil local conn
 
-local predAtivo = false local predThread = nil
-createButton("Predição Curva", 110, function(active) predAtivo = active
+local function clearPoints()
+	for _, p in pairs(points) do
+		p:Destroy()
+	end
+	points = {}
+end
 
-if active and not predThread then
-    predThread = task.spawn(function()
-        local player = game.Players.LocalPlayer
-        while predAtivo do
-            for _, plr in pairs(game.Players:GetPlayers()) do
-                if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-                    local hrp = plr.Character.HumanoidRootPart
-                    local vel = hrp.Velocity
-                    local basePos = hrp.Position
+if active then
+	conn = RunService.Heartbeat:Connect(function()
+		local target = nil
+		for _, plr in pairs(game.Players:GetPlayers()) do
+			if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+				target = plr.Character.HumanoidRootPart
+				break
+			end
+		end
 
-                    for i, tempo in ipairs({0.5, 1, 1.5, 2}) do
-                        local ponto = basePos + vel * tempo
-                        local tag = "PredPoint_" .. plr.Name .. "_" .. tostring(tempo)
+		if target then
+			local vel = target.Velocity
+			local currentPos = target.Position
 
-                        local marcador = workspace:FindFirstChild(tag) or Instance.new("Part")
-                        marcador.Name = tag
-                        marcador.Size = Vector3.new(0.5, 0.5, 0.5)
-                        marcador.Anchored = true
-                        marcador.CanCollide = false
-                        marcador.Transparency = 0.25
-                        marcador.Material = Enum.Material.Neon
-                        marcador.Color = Color3.fromHSV(tempo / 2, 1, 1)
-                        marcador.Position = ponto + Vector3.new(0, 2 + (i * 0.3), 0)
-                        marcador.Parent = workspace
-                    end
-                end
-            end
-            task.wait(0.2)
-        end
-        for _, obj in pairs(workspace:GetChildren()) do
-            if obj.Name:match("PredPoint_") then
-                obj:Destroy()
-            end
-        end
-        predThread = nil
-    end)
+			-- Verifica movimento brusco
+			if lastPos and (lastPos - currentPos).Magnitude > 3 then
+				clearPoints()
+			end
+
+			lastPos = currentPos
+
+			clearPoints()
+
+			for i = 0.5, 2, 0.5 do
+				local predicted = currentPos + vel * i
+				local part = Instance.new("Part")
+				part.Size = Vector3.new(0.4, 0.4, 0.4)
+				part.Anchored = true
+				part.CanCollide = false
+				part.Material = Enum.Material.Neon
+				part.Color = Color3.fromRGB(0, 255, 255)
+				part.Position = predicted
+				part.Parent = workspace  -- Aqui está a correção, agora a parte é paiada no workspace
+				table.insert(points, part)
+			end
+		end
+	end)
+else
+	if conn then conn:Disconnect() end
+	clearPoints()  -- Limpa os pontos quando desativado
 end
 
 end)
