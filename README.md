@@ -117,15 +117,21 @@ createButton("Anti-Tudo", 10, function(active)
 end)
 
 -- Auto-Defesa Inteligente (detecta presença e teleporta para frente)
+local defesaConnection -- variável global dentro do script
+
 createButton("Auto-Defesa Inteligente", 60, function(active)
     local player = game.Players.LocalPlayer
     local char = player.Character or player.CharacterAdded:Wait()
     local root = char:WaitForChild("HumanoidRootPart")
     local runService = game:GetService("RunService")
-    local defesaConnection
     local posInicial = root.Position
 
     if active then
+        -- Garante que não vai criar múltiplas conexões
+        if defesaConnection then
+            defesaConnection:Disconnect()
+        end
+
         defesaConnection = runService.Heartbeat:Connect(function()
             for _, plr in pairs(game.Players:GetPlayers()) do
                 if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
@@ -141,14 +147,13 @@ createButton("Auto-Defesa Inteligente", 60, function(active)
     else
         if defesaConnection then
             defesaConnection:Disconnect()
+            defesaConnection = nil
         end
         root.CFrame = CFrame.new(posInicial)
     end
 end)
 
-
-
--- Reversor de Dano (inverte o dano recebido para o inimigo mais próximo)
+-- Reversor de Dano (inverte o dano recebido para o inimigo mais próxio)
 createButton("Reversor de Dano", 110, function(active)
     local player = game.Players.LocalPlayer
     local char = player.Character or player.CharacterAdded:Wait()
