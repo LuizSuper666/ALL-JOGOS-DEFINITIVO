@@ -22,7 +22,7 @@ Panel.Parent = ScreenGui
 
 local ScrollingFrame = Instance.new("ScrollingFrame")
 ScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
-ScrollingFrame.CanvasSize = UDim2.new(0, 0, 8, 0)
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 20, 0)
 ScrollingFrame.ScrollBarThickness = 5
 ScrollingFrame.Parent = Panel
 
@@ -116,123 +116,69 @@ createButton("Anti-Tudo", 10, function(active)
     end
 end)
 
--- Intocavel
-createButton("Intocável", 60, function(active)
+-- Auto-Defesa Inteligente (detecta presença e teleporta para frente)
+createButton("Auto-Defesa Inteligente", 60, function(active)
     local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoid = character:WaitForChild("Humanoid")
-    local root = character:WaitForChild("HumanoidRootPart")
-    local cam = workspace.CurrentCamera
-
-    -- chão invisível
-    local invisPlatform = Instance.new("Part")
-    invisPlatform.Size = Vector3.new(20, 1, 20)
-    invisPlatform.Transparency = 1
-    invisPlatform.Anchored = true
-    invisPlatform.CanCollide = true
-    invisPlatform.Name = "ChaoIntocavel"
-    invisPlatform.Position = root.Position - Vector3.new(0, 16, 0)
-    invisPlatform.Parent = workspace
-
-    local camConn
+    local char = player.Character or player.CharacterAdded:Wait()
+    local root = char:WaitForChild("HumanoidRootPart")
+    local runService = game:GetService("RunService")
+    local defesaConnection
+    local posInicial = root.Position
 
     if active then
-        -- posiciona personagem e chão
-        root.CFrame = root.CFrame - Vector3.new(0, 15, 0)
-        invisPlatform.Position = root.Position - Vector3.new(0, 1, 0)
-
-        -- atravessar paredes
-        for _, part in pairs(character:GetChildren()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
-        end
-
-        -- câmera segue normalmente e permite zoom atravessando
-        cam.CameraSubject = humanoid
-        cam.CameraType = Enum.CameraType.Custom
-        camConn = game:GetService("RunService").RenderStepped:Connect(function()
-            if not active then return end
-            invisPlatform.Position = root.Position - Vector3.new(0, 1, 0)
-        end)
-
-    else
-        -- restaurar estado original
-        root.CFrame = root.CFrame + Vector3.new(0, 15, 0)
-        if camConn then camConn:Disconnect() end
-        cam.CameraSubject = humanoid
-        cam.CameraType = Enum.CameraType.Custom
-
-        -- restaurar colisão
-        for _, part in pairs(character:GetChildren()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = true
-            end
-        end
-
-        -- remover chão invisível
-        if invisPlatform and invisPlatform.Parent then
-            invisPlatform:Destroy()
-        end
-    end
-end)
-
--- Anti-Lag Dinâmico (substitui Escudo Refletor Supremo)
-createButton("Anti-Lag Dinâmico", 110, function(active)
-    local player = game.Players.LocalPlayer
-    local camera = workspace.CurrentCamera
-    local range = 150
-
-    local function isVisible(part)
-        local _, onScreen = camera:WorldToViewportPoint(part.Position)
-        return onScreen
-    end
-
-    local function simplify(part)
-        if part:IsA("BasePart") then
-            part.Material = Enum.Material.SmoothPlastic
-            part.Transparency = 1
-        end
-    end
-
-    local function restore(part)
-        if part:IsA("BasePart") then
-            part.Transparency = 0
-        end
-    end
-
-    local function cleanEffects()
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if obj:IsA("ParticleEmitter") or obj:IsA("Fire") or obj:IsA("Smoke") then
-                obj.Enabled = not active
-            end
-        end
-    end
-
-    local con
-    if active then
-        con = game:GetService("RunService").RenderStepped:Connect(function()
-            for _, part in pairs(workspace:GetDescendants()) do
-                if part:IsA("BasePart") and part:IsDescendantOf(workspace) then
-                    if not isVisible(part) or (part.Position - camera.CFrame.Position).Magnitude > range then
-                        simplify(part)
-                    else
-                        restore(part)
+        defesaConnection = runService.Heartbeat:Connect(function()
+            for _, plr in pairs(game.Players:GetPlayers()) do
+                if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                    local dist = (root.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+                    if dist < 10 then
+                        local forward = root.CFrame.LookVector * 10
+                        root.CFrame = root.CFrame + forward
+                        break
                     end
                 end
             end
-            cleanEffects()
         end)
     else
-        if con then con:Disconnect() end
-        for _, part in pairs(workspace:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.Transparency = 0
-            end
+        if defesaConnection then
+            defesaConnection:Disconnect()
         end
-        cleanEffects()
+        root.CFrame = CFrame.new(posInicial)
     end
 end)
+
+
+
+-- Reversor de Dano (inverte o dano recebido para o inimigo mais próximo)
+createButton("Reversor de Dano", 110, function(active)
+    local player = game.Players.LocalPlayer
+    local char = player.Character or player.CharacterAdded:Wait()
+    local humanoid = char:WaitForChild("Humanoid")
+    local root = char:WaitForChild("HumanoidRootPart")
+    local danoConnection
+
+    if active then
+        danoConnection = humanoid.HealthChanged:Connect(function(newHealth)
+            if newHealth < humanoid.MaxHealth then
+                local alvo, menor = nil, math.huge
+                for _, plr in pairs(game.Players:GetPlayers()) do
+                    if plr ~= player and plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character:FindFirstChild("HumanoidRootPart") then
+                        local dist = (root.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+                        if dist < menor then
+                            menor = dist
+                            alvo = plr.Character.Humanoid
+                        end
+                    end
+                end
+                if alvo then
+                    alvo:TakeDamage(humanoid.MaxHealth - newHealth)
+                end
+            end
+        end)
+    else
+        if danoConnection then danoConnection:Disconnect() end
+    end
+end)
+
 
 -- Voar (Corrigido)
 local flying = false
