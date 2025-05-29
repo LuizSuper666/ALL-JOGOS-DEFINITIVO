@@ -130,7 +130,7 @@ createButton("Auto-Defesa Inteligente", 60, function(active)
             for _, plr in pairs(game.Players:GetPlayers()) do
                 if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
                     local dist = (root.Position - plr.Character.HumanoidRootPart.Position).Magnitude
-                    if dist < 10 then
+                    if dist < 15 then
                         local forward = root.CFrame.LookVector * 10
                         root.CFrame = root.CFrame + forward
                         break
@@ -229,7 +229,7 @@ end)
 local atravessarAtivo = false
 local atravessarConnection
 
-createButton("Atravessar Paredes", 160, function(active)
+createButton("Atravessar Paredes", 210, function(active)
     local char = game:GetService("Players").LocalPlayer.Character
     atravessarAtivo = active
 
@@ -260,11 +260,17 @@ createButton("Atravessar Paredes", 160, function(active)
 end)
 
 -- Aumentar Velocidade x3
-createButton("Velocidade x3", 210, function(active)
+local originalSpeed = nil
+
+createButton("Velocidade x3", 260, function(active)
     local humanoid = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
     if humanoid then
-        local base = humanoid.WalkSpeed / 3
-        humanoid.WalkSpeed = active and base * 3 or base
+        -- Salva a velocidade original apenas uma vez
+        if not originalSpeed then
+            originalSpeed = humanoid.WalkSpeed
+        end
+
+        humanoid.WalkSpeed = active and originalSpeed * 3 or originalSpeed
     end
 end)
 
@@ -272,7 +278,7 @@ end)
 local ESPEnabled = false
 local ESPObjects = {}
 
-createButton("ESP", 260, function(active)
+createButton("ESP", 310, function(active)
     ESPEnabled = active
 
     if not ESPEnabled then
@@ -320,7 +326,7 @@ createButton("ESP", 260, function(active)
 end)
 
 -- Teleporte para o jogador mais próximo
-createButton("TP p/ Mais Próximo", 310, function()
+createButton("TP p/ Mais Próximo", 360, function()
     local player = game.Players.LocalPlayer
     local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
@@ -340,7 +346,7 @@ createButton("TP p/ Mais Próximo", 310, function()
 end)
 
 -- Teleporte para o jogador mais distante
-createButton("TP p/ Mais Distante", 360, function()
+createButton("TP p/ Mais Distante", 410, function()
     local player = game.Players.LocalPlayer
     local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
@@ -358,14 +364,3 @@ createButton("TP p/ Mais Distante", 360, function()
         root.CFrame = alvo.CFrame + Vector3.new(2, 0, 2)
     end
 end)
--- câmera livre (último botão)
-createButton("Câmera Livre", 310, function(active)
-    local cam = workspace.CurrentCamera
-    if active then
-        cam.CameraType = Enum.CameraType.Scriptable
-    else
-        cam.CameraType = Enum.CameraType.Custom
-        cam.CameraSubject = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-    end
-end)
-
