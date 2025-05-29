@@ -22,7 +22,7 @@ Panel.Parent = ScreenGui
 
 local ScrollingFrame = Instance.new("ScrollingFrame")
 ScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
-ScrollingFrame.CanvasSize = UDim2.new(0, 0, 10, 0)
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 8, 0)
 ScrollingFrame.ScrollBarThickness = 5
 ScrollingFrame.Parent = Panel
 
@@ -202,7 +202,7 @@ local flyBodyVelocity
 local flyGyro
 local flyConnection
 
-createButton("Voar", 110, function(active)
+createButton("Voar", 160, function(active)
     local player = game:GetService("Players").LocalPlayer
     local char = player.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
@@ -275,7 +275,7 @@ createButton("Atravessar Paredes", 160, function(active)
 end)
 
 -- Aumentar Velocidade x3
-createButton("Velocidade x3", 160, function(active)
+createButton("Velocidade x3", 210, function(active)
     local humanoid = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
     if humanoid then
         local base = humanoid.WalkSpeed / 3
@@ -335,7 +335,7 @@ createButton("ESP", 260, function(active)
 end)
 
 -- Teleporte para o jogador mais próximo
-createButton("TP p/ Mais Próximo", 210, function()
+createButton("TP p/ Mais Próximo", 310, function()
     local player = game.Players.LocalPlayer
     local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
@@ -355,7 +355,7 @@ createButton("TP p/ Mais Próximo", 210, function()
 end)
 
 -- Teleporte para o jogador mais distante
-createButton("TP p/ Mais Distante", 260, function()
+createButton("TP p/ Mais Distante", 360, function()
     local player = game.Players.LocalPlayer
     local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
@@ -374,7 +374,7 @@ createButton("TP p/ Mais Distante", 260, function()
     end
 end)
 -- FPS Unlock (último botão)
-createButton("FPS Unlock", 310, function(active)
+createButton("FPS Unlock", 410, function(active)
     if active and setfpscap then
         setfpscap(999)
     elseif setfpscap then
