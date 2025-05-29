@@ -120,21 +120,60 @@ end)
 createButton("Intocável", 60, function(active)
     local player = game.Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
     local root = character:WaitForChild("HumanoidRootPart")
     local cam = workspace.CurrentCamera
 
+    -- chão invisível
+    local invisPlatform = Instance.new("Part")
+    invisPlatform.Size = Vector3.new(20, 1, 20)
+    invisPlatform.Transparency = 1
+    invisPlatform.Anchored = true
+    invisPlatform.CanCollide = true
+    invisPlatform.Name = "ChaoIntocavel"
+    invisPlatform.Position = root.Position - Vector3.new(0, 16, 0)
+    invisPlatform.Parent = workspace
+
+    local camConn
+
     if active then
+        -- posiciona personagem e chão
         root.CFrame = root.CFrame - Vector3.new(0, 15, 0)
-        local conn
-        conn = game:GetService("RunService").RenderStepped:Connect(function()
-            if not active then
-                conn:Disconnect()
-                return
+        invisPlatform.Position = root.Position - Vector3.new(0, 1, 0)
+
+        -- atravessar paredes
+        for _, part in pairs(character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
             end
-            cam.CameraSubject = character:FindFirstChildOfClass("Humanoid")
+        end
+
+        -- câmera segue normalmente e permite zoom atravessando
+        cam.CameraSubject = humanoid
+        cam.CameraType = Enum.CameraType.Custom
+        camConn = game:GetService("RunService").RenderStepped:Connect(function()
+            if not active then return end
+            invisPlatform.Position = root.Position - Vector3.new(0, 1, 0)
         end)
+
     else
+        -- restaurar estado original
         root.CFrame = root.CFrame + Vector3.new(0, 15, 0)
+        if camConn then camConn:Disconnect() end
+        cam.CameraSubject = humanoid
+        cam.CameraType = Enum.CameraType.Custom
+
+        -- restaurar colisão
+        for _, part in pairs(character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+
+        -- remover chão invisível
+        if invisPlatform and invisPlatform.Parent then
+            invisPlatform:Destroy()
+        end
     end
 end)
 
@@ -373,12 +412,14 @@ createButton("TP p/ Mais Distante", 360, function()
         root.CFrame = alvo.CFrame + Vector3.new(2, 0, 2)
     end
 end)
--- FPS Unlock (último botão)
-createButton("FPS Unlock", 410, function(active)
-    if active and setfpscap then
-        setfpscap(999)
-    elseif setfpscap then
-        setfpscap(60)
+-- câmera livre (último botão)
+createButton("Câmera Livre", 310, function(active)
+    local cam = workspace.CurrentCamera
+    if active then
+        cam.CameraType = Enum.CameraType.Scriptable
+    else
+        cam.CameraType = Enum.CameraType.Custom
+        cam.CameraSubject = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
     end
 end)
 
