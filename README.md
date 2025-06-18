@@ -212,7 +212,7 @@ createButton("Auto-Defesa Inteligente", 60, function(active)
 end)
 
 -- Reversor de Dano (inverte o dano recebido para o inimigo mais próxio)
-createButton("Reversor de Dano", 110, function(active)
+createButton("Reversor de Dano (TESTE)", 110, function(active)
     local player = game.Players.LocalPlayer
     local char = player.Character or player.CharacterAdded:Wait()
     local humanoid = char:WaitForChild("Humanoid")
@@ -337,53 +337,69 @@ createButton("Velocidade x3", 260, function(active)
     end
 end)
 
--- ESP
+-- 🔍 ESP Profissional
 local ESPEnabled = false
-local ESPObjects = {}
+local ESPDots = {}
 
 createButton("ESP", 310, function(active)
     ESPEnabled = active
 
+    -- Desativa ESP: limpa tudo
     if not ESPEnabled then
-        for _, obj in pairs(ESPObjects) do
-            obj:Destroy()
+        for _, dot in pairs(ESPDots) do
+            if dot then dot:Destroy() end
         end
-        ESPObjects = {}
+        ESPDots = {}
         return
     end
 
-    local function createESP(player)
-        if player == game.Players.LocalPlayer then return end
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
 
-        local char = player.Character
-        if char then
-            local head = char:FindFirstChild("Head")
-            if head then
-                local esp = Instance.new("BillboardGui", head)
-                esp.Size = UDim2.new(0, 10, 0, 10)
-                esp.Adornee = head
-                esp.AlwaysOnTop = true
+    local function attachESP(player)
+        if player == LocalPlayer then return end
+        player.CharacterAdded:Connect(function(char)
+            local head = char:WaitForChild("Head", 5)
+            if not head then return end
 
-                local dot = Instance.new("Frame", esp)
-                dot.Size = UDim2.new(1, 0, 1, 0)
-                dot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-                dot.BackgroundTransparency = 0
-                dot.BorderSizePixel = 0
+            local gui = Instance.new("BillboardGui")
+            gui.Name = "ESP_Dot"
+            gui.Adornee = head
+            gui.Size = UDim2.new(0, 10, 0, 10)
+            gui.AlwaysOnTop = true
+            gui.Parent = head
 
-                ESPObjects[player] = esp
-            end
+            local dot = Instance.new("Frame")
+            dot.Size = UDim2.new(1, 0, 1, 0)
+            dot.BackgroundColor3 = Color3.new(0, 1, 0)
+            dot.BackgroundTransparency = 0
+            dot.BorderSizePixel = 0
+            dot.Parent = gui
+
+            ESPDots[player] = gui
+        end)
+
+        -- Caso já esteja carregado
+        if player.Character then
+            task.spawn(function()
+                attachESP(player)
+            end)
         end
     end
 
-    for _, player in pairs(game.Players:GetPlayers()) do
-        createESP(player)
+    -- Iniciar ESP para todos os jogadores existentes
+    for _, plr in ipairs(Players:GetPlayers()) do
+        attachESP(plr)
     end
 
-    game.Players.PlayerAdded:Connect(createESP)
-    game.Players.PlayerRemoving:Connect(function(player)
-        if ESPObjects[player] then
-            ESPObjects[player]:Destroy()
-            ESPObjects[player] = nil
+    -- Novos jogadores
+    Players.PlayerAdded:Connect(attachESP)
+
+    -- Remoção segura
+    Players.PlayerRemoving:Connect(function(plr)
+        if ESPDots[plr] then
+            ESPDots[plr]:Destroy()
+            ESPDots[plr] = nil
         end
     end)
 end)
