@@ -59,66 +59,114 @@ local function createButton(name, y, callback)
     end)
 end
 
--- Anti-Tudo (completo restaurado) 
+-- Anti-Tudo com proteção total (incluindo RemoteEvents suspeitos)
 createButton("Anti-Tudo", 10, function(active)
-    if active then
-        local mt = getrawmetatable(game)
-        setreadonly(mt, false)
-        local oldNamecall = mt.__namecall
-        mt.__namecall = newcclosure(function(self, ...)
-            local method = getnamecallmethod()
-            if method:lower() == "kick" then return nil end
-            return oldNamecall(self, ...)
-        end)
-
-        for _, v in pairs(getconnections(game:GetService("Players").LocalPlayer.Idled)) do
-            v:Disable()
-        end
-
-        hookfunction(game.HttpPost, function(...) return nil end)
-
-        game:GetService("CoreGui").ChildRemoved:Connect(function(child)
-            if child.Name == "RobloxPromptGui" then
-                wait(9e9)
-            end
-        end)
-
-        local function showMessage(message)
-            local screenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-            local textLabel = Instance.new("TextLabel", screenGui)
-            textLabel.Size = UDim2.new(0, 400, 0, 100)
-            textLabel.Position = UDim2.new(0.5, -200, 0, 10)
-            textLabel.Text = message
-            textLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-            textLabel.TextSize = 30
-            textLabel.BackgroundTransparency = 1
-            wait(2)
-            screenGui:Destroy()
-        end
-
-        local function blockAllReports()
-            local ReplicatedStorage = game:GetService("ReplicatedStorage")
-            for _, reportName in pairs({"Report", "BugReport", "ServerFailReport"}) do
-                local event = ReplicatedStorage:FindFirstChild(reportName)
-                if event then
-                    local oldFire = event.FireServer
-                    event.FireServer = newcclosure(function()
-                        showMessage("Alguém Te Denunciou!! ( Bloqueado )")
-                    end)
-                end
-            end
-        end
-
-        blockAllReports()
-        print("[🔰] Anti-Tudo ativado!")
-    else
+    if not active then
         print("[🔰] Anti-Tudo desativado!")
+        return
     end
+
+    local Players = game:GetService("Players")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local CoreGui = game:GetService("CoreGui")
+    local TeleportService = game:GetService("TeleportService")
+    local LocalPlayer = Players.LocalPlayer
+
+    -- Bloquear kick via __namecall
+    local mt = getrawmetatable(game)
+    setreadonly(mt, false)
+    local oldNamecall = mt.__namecall
+    mt.__namecall = newcclosure(function(self, ...)
+        if getnamecallmethod():lower() == "kick" then return nil end
+        return oldNamecall(self, ...)
+    end)
+
+    -- Desativar kick por inatividade
+    for _, conn in ipairs(getconnections(LocalPlayer.Idled)) do
+        conn:Disable()
+    end
+
+    -- Bloquear requisições HTTP
+    hookfunction(game.HttpPost, function(...) return nil end)
+
+    -- Prevenir remoção de telas de sistema (ex: aviso de ban)
+    CoreGui.ChildRemoved:Connect(function(child)
+        if child.Name == "RobloxPromptGui" then
+            task.wait(9e9)
+        end
+    end)
+
+    -- Mostrar aviso na tela
+    local function showMessage(message)
+        local gui = Instance.new("ScreenGui", CoreGui)
+        local label = Instance.new("TextLabel", gui)
+        label.Size = UDim2.new(0, 400, 0, 100)
+        label.Position = UDim2.new(0.5, -200, 0, 10)
+        label.Text = message
+        label.TextColor3 = Color3.new(1, 0, 0)
+        label.TextSize = 30
+        label.BackgroundTransparency = 1
+        task.wait(2)
+        gui:Destroy()
+    end
+
+    -- Bloquear eventos de denúncia com nomes conhecidos
+    local function blockKnownReports()
+        local names = {"Report", "BugReport", "ServerFailReport"}
+        for _, name in ipairs(names) do
+            local event = ReplicatedStorage:FindFirstChild(name)
+            if event and event.FireServer then
+                event.FireServer = newcclosure(function()
+                    showMessage("Alguém Te Denunciou!! (Bloqueado)")
+                end)
+            end
+        end
+    end
+
+    -- Bloquear teleportações forçadas
+    hookfunction(TeleportService.Teleport, function(...)
+        showMessage("Tentaram te Teleportar!! (Bloqueado)")
+        return
+    end)
+
+    -- Bloquear tentativa de remover seu player
+    Players.PlayerRemoving:Connect(function(player)
+        if player == LocalPlayer then
+            showMessage("Tentaram te Remover!! (Bloqueado)")
+            task.wait(9e9)
+        end
+    end)
+
+    -- Proteção extra: interceptar qualquer RemoteEvent suspeito
+    local function blockSuspiciousRemoteEvents()
+        for _, obj in ipairs(game:GetDescendants()) do
+            if obj:IsA("RemoteEvent") and obj.FireServer then
+                local original = obj.FireServer
+                obj.FireServer = newcclosure(function(_, ...)
+                    showMessage("⚠️ Tentativa de denúncia detectada (bloqueada)")
+                    return -- bloqueia sem chamar o original
+                end)
+            end
+        end
+
+        -- Escutar objetos novos criados durante o jogo
+        game.DescendantAdded:Connect(function(obj)
+            if obj:IsA("RemoteEvent") and obj.FireServer then
+                obj.FireServer = newcclosure(function(_, ...)
+                    showMessage("⚠️ Nova denúncia detectada e bloqueada")
+                    return
+                end)
+            end
+        end)
+    end
+
+    blockKnownReports()
+    blockSuspiciousRemoteEvents()
+    print("[🔰] Anti-Tudo ativado com escudo global de RemoteEvents.")
 end)
 
 -- Auto-Defesa Inteligente (detecta presença e teleporta para frente)
 local defesaConnection -- variável global dentro do script
-
 createButton("Auto-Defesa Inteligente", 60, function(active)
     local player = game.Players.LocalPlayer
     local char = player.Character or player.CharacterAdded:Wait()
