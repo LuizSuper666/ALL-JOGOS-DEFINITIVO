@@ -1,70 +1,96 @@
 -- Painel flutuante com botões ordenados e correções aplicadas no ESCUDO REFLETOR SUPREMO e Auto-Heal -- Tudo organizado e funcional
 
--- 🧩 Interface principal
-local guiService = game:GetService("CoreGui")
-
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "PainelTop"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = guiService
+-- 🌟 Interface Moderna e Refinada
+local CoreGui = game:GetService("CoreGui")
 
 local function createElement(class, props, parent)
     local inst = Instance.new(class)
-    for prop, val in pairs(props) do inst[prop] = val end
+    for prop, val in pairs(props) do
+        if prop ~= "Children" then inst[prop] = val end
+    end
+    if props.Children then
+        for _, child in pairs(props.Children) do child.Parent = inst end
+    end
     inst.Parent = parent
     return inst
 end
 
--- Botão flutuante
-local floatingButton = createElement("TextButton", {
-    Size = UDim2.new(0, 80, 0, 30),
-    Position = UDim2.new(0.9, 0, 0.1, 0),
-    Text = "SCRIPT",
-    BackgroundColor3 = Color3.fromRGB(0, 0, 255)
-}, screenGui)
+-- 🖼️ Interface Base
+local gui = createElement("ScreenGui", {
+    Name = "PainelTop",
+    ResetOnSpawn = false
+}, CoreGui)
 
--- Painel principal
+-- 🎛️ Painel principal
 local panel = createElement("Frame", {
-    Size = UDim2.new(0, 200, 0, 400),
-    Position = UDim2.new(0.75, 0, 0.1, 0),
-    BackgroundColor3 = Color3.fromRGB(50, 50, 50),
-    Visible = false
-}, screenGui)
+    Size = UDim2.new(0, 220, 0, 400),
+    Position = UDim2.new(0.7, 0, 0.15, 0),
+    BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+    Visible = false,
+    BorderSizePixel = 0,
+    Children = {
+        createElement("UICorner", {}),
+        createElement("UIStroke", {Color = Color3.fromRGB(0, 170, 255), Thickness = 1.5})
+    }
+}, gui)
 
--- Botão fechar
+-- 🧾 Scroll de botões
+local scroll = createElement("ScrollingFrame", {
+    Size = UDim2.new(1, 0, 1, 0),
+    CanvasSize = UDim2.new(0, 0, 20, 0),
+    ScrollBarThickness = 4,
+    BorderSizePixel = 0,
+    BackgroundTransparency = 1
+}, panel)
+
+-- ❌ Botão Fechar
 createElement("TextButton", {
     Size = UDim2.new(0, 30, 0, 30),
-    Position = UDim2.new(1, -30, 0, 0),
-    Text = "X",
-    BackgroundColor3 = Color3.fromRGB(255, 0, 0),
+    Position = UDim2.new(1, -35, 0, 5),
+    Text = "✕",
+    TextColor3 = Color3.new(1, 1, 1),
+    BackgroundColor3 = Color3.fromRGB(200, 50, 50),
+    Font = Enum.Font.GothamBold,
+    TextSize = 16,
+    Children = {createElement("UICorner", {})},
     MouseButton1Click = function() panel.Visible = false end
 }, panel)
 
--- Scroll com os botões
-local scrollingFrame = createElement("ScrollingFrame", {
-    Size = UDim2.new(1, 0, 1, 0),
-    CanvasSize = UDim2.new(0, 0, 20, 0),
-    ScrollBarThickness = 5
-}, panel)
+-- 🔘 Botão Flutuante
+local openBtn = createElement("TextButton", {
+    Size = UDim2.new(0, 100, 0, 35),
+    Position = UDim2.new(0.88, 0, 0.1, 0),
+    Text = "⚙️ Abrir Painel",
+    BackgroundColor3 = Color3.fromRGB(0, 120, 255),
+    TextColor3 = Color3.new(1, 1, 1),
+    Font = Enum.Font.GothamBold,
+    TextSize = 14,
+    BorderSizePixel = 0,
+    Children = {createElement("UICorner", {})}
+}, gui)
 
--- Abrir/Fechar painel
-floatingButton.MouseButton1Click:Connect(function()
+openBtn.MouseButton1Click:Connect(function()
     panel.Visible = not panel.Visible
 end)
 
--- 🔘 Criador de botões dinâmicos
+-- 🧩 Criador de botões dinâmicos
 function createButton(name, y, callback)
-    local button = createElement("TextButton", {
+    local btn = createElement("TextButton", {
         Size = UDim2.new(0, 180, 0, 40),
         Position = UDim2.new(0, 10, 0, y),
         Text = name,
-        BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    }, scrollingFrame)
+        BackgroundColor3 = Color3.fromRGB(255, 70, 70),
+        TextColor3 = Color3.new(1, 1, 1),
+        Font = Enum.Font.Gotham,
+        TextSize = 14,
+        BorderSizePixel = 0,
+        Children = {createElement("UICorner", {})}
+    }, scroll)
 
     local active = false
-    button.MouseButton1Click:Connect(function()
+    btn.MouseButton1Click:Connect(function()
         active = not active
-        button.BackgroundColor3 = active and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+        btn.BackgroundColor3 = active and Color3.fromRGB(50, 200, 100) or Color3.fromRGB(255, 70, 70)
         callback(active)
     end)
 end
