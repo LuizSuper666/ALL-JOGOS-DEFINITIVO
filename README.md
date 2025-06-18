@@ -1,55 +1,65 @@
 -- Painel flutuante com botões ordenados e correções aplicadas no ESCUDO REFLETOR SUPREMO e Auto-Heal -- Tudo organizado e funcional
 
--- Interface principal
-local ScreenGui = Instance.new("ScreenGui") 
-ScreenGui.Name = "PainelTop"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = game:GetService("CoreGui")
+-- 🧩 Interface principal
+local guiService = game:GetService("CoreGui")
 
-local FloatingButton = Instance.new("TextButton")
-FloatingButton.Size = UDim2.new(0, 80, 0, 30)
-FloatingButton.Position = UDim2.new(0.9, 0, 0.1, 0)
-FloatingButton.Text = "SCRIPT"
-FloatingButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
-FloatingButton.Parent = ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "PainelTop"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = guiService
 
-local Panel = Instance.new("Frame")
-Panel.Size = UDim2.new(0, 200, 0, 400)
-Panel.Position = UDim2.new(0.75, 0, 0.1, 0)
-Panel.Visible = false
-Panel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-Panel.Parent = ScreenGui
+local function createElement(class, props, parent)
+    local inst = Instance.new(class)
+    for prop, val in pairs(props) do inst[prop] = val end
+    inst.Parent = parent
+    return inst
+end
 
-local ScrollingFrame = Instance.new("ScrollingFrame")
-ScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
-ScrollingFrame.CanvasSize = UDim2.new(0, 0, 20, 0)
-ScrollingFrame.ScrollBarThickness = 5
-ScrollingFrame.Parent = Panel
+-- Botão flutuante
+local floatingButton = createElement("TextButton", {
+    Size = UDim2.new(0, 80, 0, 30),
+    Position = UDim2.new(0.9, 0, 0.1, 0),
+    Text = "SCRIPT",
+    BackgroundColor3 = Color3.fromRGB(0, 0, 255)
+}, screenGui)
 
-local CloseButton = Instance.new("TextButton")
-CloseButton.Size = UDim2.new(0, 30, 0, 30)
-CloseButton.Position = UDim2.new(1, -30, 0, 0)
-CloseButton.Text = "X"
-CloseButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-CloseButton.Parent = Panel
+-- Painel principal
+local panel = createElement("Frame", {
+    Size = UDim2.new(0, 200, 0, 400),
+    Position = UDim2.new(0.75, 0, 0.1, 0),
+    BackgroundColor3 = Color3.fromRGB(50, 50, 50),
+    Visible = false
+}, screenGui)
+
+-- Botão fechar
+createElement("TextButton", {
+    Size = UDim2.new(0, 30, 0, 30),
+    Position = UDim2.new(1, -30, 0, 0),
+    Text = "X",
+    BackgroundColor3 = Color3.fromRGB(255, 0, 0),
+    MouseButton1Click = function() panel.Visible = false end
+}, panel)
+
+-- Scroll com os botões
+local scrollingFrame = createElement("ScrollingFrame", {
+    Size = UDim2.new(1, 0, 1, 0),
+    CanvasSize = UDim2.new(0, 0, 20, 0),
+    ScrollBarThickness = 5
+}, panel)
 
 -- Abrir/Fechar painel
-FloatingButton.MouseButton1Click:Connect(function()
-    Panel.Visible = not Panel.Visible
+floatingButton.MouseButton1Click:Connect(function()
+    panel.Visible = not panel.Visible
 end)
 
-CloseButton.MouseButton1Click:Connect(function()
-    Panel.Visible = false
-end)
-
--- Criador de botões
-local function createButton(name, y, callback)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 180, 0, 40)
-    button.Position = UDim2.new(0, 10, 0, y)
-    button.Text = name
-    button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    button.Parent = ScrollingFrame
+-- 🔘 Criador de botões dinâmicos
+function createButton(name, y, callback)
+    local button = createElement("TextButton", {
+        Size = UDim2.new(0, 180, 0, 40),
+        Position = UDim2.new(0, 10, 0, y),
+        Text = name,
+        BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    }, scrollingFrame)
 
     local active = false
     button.MouseButton1Click:Connect(function()
